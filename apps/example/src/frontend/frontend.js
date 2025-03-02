@@ -118,6 +118,11 @@ const PLUGIN_DEFAULTS = {
     key: "{SUPABASE_KEY}",
     table: "your-table-name",
   },
+  "@curatedotfun/near-social": {
+    accountId: "{NEAR_ACCOUNT_ID}",
+    privateKey: "{NEAR_PRIVATE_KEY}",
+    networkId: "testnet"
+  },
 };
 
 // Default configuration
@@ -139,10 +144,11 @@ const DEFAULT_CONFIG = {
   distribute: [
     {
       plugin: "@curatedotfun/telegram",
-      config: {
-        botToken: "{TELEGRAM_BOT_TOKEN}",
-        channelId: "@your_channel",
-      },
+      config: PLUGIN_DEFAULTS["@curatedotfun/telegram"],
+    },
+    {
+      plugin: "@curatedotfun/near-social",
+      config: PLUGIN_DEFAULTS["@curatedotfun/near-social"],
     },
   ],
 };

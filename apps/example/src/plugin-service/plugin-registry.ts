@@ -36,6 +36,10 @@ let pluginRegistry: Record<string, PluginMetadata> = {
     url: "http://localhost:3002/remoteEntry.js",
     type: "transformer",
   },
+  "@curatedotfun/near-social": {
+    url: "http://localhost:3009/remoteEntry.js",
+    type: "distributor",
+  },
 };
 
 export function getPluginByName(name: string): PluginMetadata | undefined {
