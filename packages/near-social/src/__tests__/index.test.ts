@@ -32,7 +32,7 @@ describe("NearSocialPlugin", () => {
     await expect(
       plugin.initialize({
         accountId: "test.near",
-        privateKey: "ed25519:privatekey",
+        privateKey: "ed25519:3hoMW1HvnRLSFCLZnvPzWeoGwtdHzke34B2cTHM8rhcbG3TbuLKtShTv3DvyejnXKXKBiV7YPkLeqUHN1ghnqpFv",
         networkId: "testnet"
       })
     ).resolves.not.toThrow();
