@@ -1,14 +1,14 @@
-import BigNumber from 'bignumber.js';
+import BigNumber from "bignumber.js";
 
 // constants
 import {
   MINIMUM_STORAGE_IN_BYTES,
   STORAGE_COST_PER_BYTES_IN_ATOMIC_UNITS,
-  EXTRA_STORAGE_BALANCE
-} from '../constants';
+  EXTRA_STORAGE_BALANCE,
+} from "../constants";
 
 // utils
-import calculateSizeOfData from './calculateSizeOfData';
+import calculateSizeOfData from "./calculateSizeOfData";
 
 interface CalculateDepositOptions {
   data: Record<string, unknown> | string;
@@ -30,15 +30,15 @@ export default function calculateRequiredDeposit({
   storageBalance,
 }: CalculateDepositOptions): BigNumber {
   const minimumStorageCost: BigNumber = new BigNumber(
-    MINIMUM_STORAGE_IN_BYTES
+    MINIMUM_STORAGE_IN_BYTES,
   ).multipliedBy(new BigNumber(STORAGE_COST_PER_BYTES_IN_ATOMIC_UNITS));
-  
+
   const storageCostOfData: BigNumber = new BigNumber(
-    calculateSizeOfData(data).toString()
+    calculateSizeOfData(data).toString(),
   )
     .plus(EXTRA_STORAGE_BALANCE) // Extra storage balance for safety
     .multipliedBy(STORAGE_COST_PER_BYTES_IN_ATOMIC_UNITS);
-  
+
   let storageDepositAvailable: BigNumber;
 
   // if there is no balance, use the minimum storage cost, or the storage cost of the data
@@ -53,5 +53,5 @@ export default function calculateRequiredDeposit({
   // if the storage deposit available is less than the cost of storage, use the difference as the required deposit
   return storageDepositAvailable.lt(storageCostOfData)
     ? storageCostOfData.minus(storageDepositAvailable)
-    : new BigNumber('0');
+    : new BigNumber("0");
 }

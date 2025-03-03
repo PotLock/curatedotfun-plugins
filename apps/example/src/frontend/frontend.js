@@ -20,15 +20,15 @@ async function fetchPluginRegistry() {
     // Update registry editor
     registryEditor.value = JSON.stringify(registry, null, 2);
 
-  // Update available plugins
-  AVAILABLE_PLUGINS = {
-    transformer: Object.entries(registry)
-      .filter(([_, metadata]) => metadata.type === "transformer")
-      .map(([name]) => name),
-    distributor: Object.entries(registry)
-      .filter(([_, metadata]) => metadata.type === "distributor")
-      .map(([name]) => name),
-  };
+    // Update available plugins
+    AVAILABLE_PLUGINS = {
+      transformer: Object.entries(registry)
+        .filter(([_, metadata]) => metadata.type === "transformer")
+        .map(([name]) => name),
+      distributor: Object.entries(registry)
+        .filter(([_, metadata]) => metadata.type === "distributor")
+        .map(([name]) => name),
+    };
 
     // Update plugin lists if in config view
     if (currentView === "config") {
@@ -121,7 +121,7 @@ const PLUGIN_DEFAULTS = {
   "@curatedotfun/near-social": {
     accountId: "{NEAR_ACCOUNT_ID}",
     privateKey: "{NEAR_PRIVATE_KEY}",
-    networkId: "testnet"
+    networkId: "testnet",
   },
 };
 
