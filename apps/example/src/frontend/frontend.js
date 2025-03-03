@@ -4,8 +4,8 @@ const updateRegistryBtn = document.getElementById("updateRegistry");
 const registryStatus = document.getElementById("registryStatus");
 
 let AVAILABLE_PLUGINS = {
-  transform: [],
-  distribute: [],
+  transformer: [],
+  distributor: [],
 };
 
 // Fetch and update plugin registry
@@ -20,15 +20,15 @@ async function fetchPluginRegistry() {
     // Update registry editor
     registryEditor.value = JSON.stringify(registry, null, 2);
 
-    // Update available plugins
-    AVAILABLE_PLUGINS = {
-      transform: Object.entries(registry)
-        .filter(([_, metadata]) => metadata.type === "transformer")
-        .map(([name]) => name),
-      distribute: Object.entries(registry)
-        .filter(([_, metadata]) => metadata.type === "distributor")
-        .map(([name]) => name),
-    };
+  // Update available plugins
+  AVAILABLE_PLUGINS = {
+    transformer: Object.entries(registry)
+      .filter(([_, metadata]) => metadata.type === "transformer")
+      .map(([name]) => name),
+    distributor: Object.entries(registry)
+      .filter(([_, metadata]) => metadata.type === "distributor")
+      .map(([name]) => name),
+  };
 
     // Update plugin lists if in config view
     if (currentView === "config") {
@@ -206,7 +206,7 @@ function updateConfigView() {
     // Add distribute plugins
     if (config.distribute && Array.isArray(config.distribute)) {
       config.distribute.forEach((distribute, index) => {
-        addPluginToList("distribute", distribute, index);
+        addPluginToList("distributor", distribute, index);
       });
     }
   } catch (error) {
