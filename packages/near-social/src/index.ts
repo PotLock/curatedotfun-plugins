@@ -4,10 +4,10 @@ import * as nearAPI from "near-api-js";
 const { Near, Account, KeyPair, keyStores, providers } = nearAPI;
 
 // Constants
-import { 
-  SOCIAL_CONTRACT, 
-  GAS_FEE_IN_ATOMIC_UNITS, 
-  NO_DEPOSIT 
+import {
+  SOCIAL_CONTRACT,
+  GAS_FEE_IN_ATOMIC_UNITS,
+  NO_DEPOSIT,
 } from "./constants";
 import calculateRequiredDeposit from "./utils/calculateRequiredDeposit";
 
@@ -21,7 +21,8 @@ interface NearSocialConfig {
 }
 
 export default class NearSocialPlugin
-  implements DistributorPlugin<string, NearSocialConfig> {
+  implements DistributorPlugin<string, NearSocialConfig>
+{
   readonly type = "distributor" as const;
   private accountId: string | null = null;
   private privateKey: string | null = null;
@@ -54,12 +55,14 @@ export default class NearSocialPlugin
     this.near = new Near({
       networkId: this.networkId,
       keyStore,
-      nodeUrl: this.networkId === "mainnet"
-        ? "https://rpc.mainnet.near.org"
-        : "https://rpc.testnet.near.org",
-      walletUrl: this.networkId === "mainnet"
-        ? "https://mynearwallet.com/"
-        : "https://testnet.mynearwallet.com/",
+      nodeUrl:
+        this.networkId === "mainnet"
+          ? "https://rpc.mainnet.near.org"
+          : "https://rpc.testnet.near.org",
+      walletUrl:
+        this.networkId === "mainnet"
+          ? "https://mynearwallet.com/"
+          : "https://testnet.mynearwallet.com/",
     });
   }
 
@@ -78,36 +81,36 @@ export default class NearSocialPlugin
       // Prepare post content
       const postContent = {
         type: "md",
-        text: content
+        text: content,
       };
 
       // Prepare the data for the transaction
       const data = {
         [this.accountId]: {
           post: {
-            main: JSON.stringify(postContent)
+            main: JSON.stringify(postContent),
           },
           index: {
             post: JSON.stringify({
               key: "main",
               value: {
-                type: "md"
-              }
-            })
-          }
-        }
+                type: "md",
+              },
+            }),
+          },
+        },
       };
 
       // Calculate the required deposit based on the data size
       const depositAmount = calculateRequiredDeposit({ data });
-      
+
       // Sign and send transaction directly using callMethod
       await this.callMethod({
         contractId: SOCIAL_CONTRACT[this.networkId],
         method: "set",
         args: { data }, // Pass data as an argument
         gas: GAS_FEE_IN_ATOMIC_UNITS,
-        deposit: depositAmount.toFixed(0) // Convert BigNumber to string with no decimal places
+        deposit: depositAmount.toFixed(0), // Convert BigNumber to string with no decimal places
       });
 
       console.log("Successfully posted to NEAR Social");
@@ -130,7 +133,7 @@ export default class NearSocialPlugin
     if (!this.accountId || !this.near) {
       throw new Error("NEAR Social plugin not initialized");
     }
-    
+
     const { connection } = this.near;
     return new Account(connection, this.accountId);
   }
@@ -140,7 +143,7 @@ export default class NearSocialPlugin
     method,
     args = {},
     gas = GAS_FEE_IN_ATOMIC_UNITS,
-    deposit = NO_DEPOSIT
+    deposit = NO_DEPOSIT,
   }: {
     contractId: string;
     method: string;
@@ -157,16 +160,16 @@ export default class NearSocialPlugin
       const account = this.getAccount();
 
       // Ensure deposit is a valid integer string without decimal points
-      const depositValue = deposit.includes('.')
-        ? deposit.substring(0, deposit.indexOf('.'))
+      const depositValue = deposit.includes(".")
+        ? deposit.substring(0, deposit.indexOf("."))
         : deposit;
-        
+
       const outcome = await account.functionCall({
         contractId,
         methodName: method,
         args,
         gas: BigInt(gas),
-        attachedDeposit: BigInt(depositValue || '0')
+        attachedDeposit: BigInt(depositValue || "0"),
       });
 
       return providers.getTransactionLastResult(outcome);

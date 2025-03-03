@@ -1,4 +1,4 @@
-import { ESTIMATED_KEY_VALUE_SIZE, ESTIMATED_NODE_SIZE } from '../constants';
+import { ESTIMATED_KEY_VALUE_SIZE, ESTIMATED_NODE_SIZE } from "../constants";
 
 /**
  * Checks if a value is an object.
@@ -6,7 +6,7 @@ import { ESTIMATED_KEY_VALUE_SIZE, ESTIMATED_NODE_SIZE } from '../constants';
  * @returns True if the value is an object, false otherwise
  */
 function isObject(value: unknown): boolean {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -16,11 +16,11 @@ function isObject(value: unknown): boolean {
  * @see {@link https://github.com/NearSocial/VM/blob/6047c6a9b96f3de14e600c1d2b96c432bbb76dd4/src/lib/data/utils.js#L193}
  */
 export default function calculateSizeOfData(
-  data: Record<string, unknown> | string
+  data: Record<string, unknown> | string,
 ): bigint {
   const calculate = (
     _data: unknown,
-    previousData?: Record<string, unknown> | string
+    previousData?: Record<string, unknown> | string,
   ): bigint => {
     if (isObject(_data)) {
       return Object.entries(_data as Record<string, unknown>).reduce<bigint>(
@@ -42,15 +42,15 @@ export default function calculateSizeOfData(
             BigInt(ESTIMATED_KEY_VALUE_SIZE)
           );
         },
-        BigInt(isObject(previousData) ? 0 : ESTIMATED_NODE_SIZE)
+        BigInt(isObject(previousData) ? 0 : ESTIMATED_NODE_SIZE),
       );
     }
 
     return BigInt(
-      (typeof _data === 'string' ? _data.length : 8) -
-        (previousData && typeof previousData === 'string'
+      (typeof _data === "string" ? _data.length : 8) -
+        (previousData && typeof previousData === "string"
           ? previousData.length
-          : 0)
+          : 0),
     );
   };
 
