@@ -126,11 +126,6 @@ export default class NearSocialPlugin
   }
 
   /**
-   * Makes a call to a contract
-   * @param options - the options for the call
-   * @returns - the resulting transaction
-   */
-  /**
    * Helper method to get an Account instance
    * @returns Account instance
    */
