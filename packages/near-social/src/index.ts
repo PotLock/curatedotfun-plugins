@@ -17,6 +17,7 @@ interface NearSocialConfig {
   accountId: string;
   privateKey: string;
   networkId?: "mainnet" | "testnet";
+  key?: string;
   [key: string]: string | undefined;
 }
 
@@ -68,11 +69,15 @@ export default class NearSocialPlugin
 
   async distribute({
     input: content,
+    config,
   }: ActionArgs<string, NearSocialConfig>): Promise<void> {
-    await this.createPost(content);
+    await this.createPost(content, config?.key);
   }
 
-  private async createPost(content: string): Promise<void> {
+  private async createPost(
+    content: string,
+    key: string = "main",
+  ): Promise<void> {
     if (!this.accountId || !this.privateKey || !this.near) {
       throw new Error("NEAR Social plugin not initialized");
     }
@@ -88,11 +93,11 @@ export default class NearSocialPlugin
       const data = {
         [this.accountId]: {
           post: {
-            main: JSON.stringify(postContent),
+            [key]: JSON.stringify(postContent),
           },
           index: {
             post: JSON.stringify({
-              key: "main",
+              key,
               value: {
                 type: "md",
               },
