@@ -1,6 +1,17 @@
 import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
 import { KeyPairString } from "@near-js/crypto";
-import { connect, KeyPair, keyStores, providers } from "near-api-js";
+import * as nearAPI from "near-api-js";
+const { Near, Account, KeyPair, keyStores, providers } = nearAPI;
+
+// Constants
+import { 
+  SOCIAL_CONTRACT, 
+  GAS_FEE_IN_ATOMIC_UNITS, 
+  NO_DEPOSIT 
+} from "./constants";
+import calculateRequiredDeposit from "./utils/calculateRequiredDeposit";
+
+// Utils
 
 interface NearSocialConfig {
   accountId: string;
@@ -8,14 +19,6 @@ interface NearSocialConfig {
   networkId?: "mainnet" | "testnet";
   [key: string]: string | undefined;
 }
-
-const SOCIAL_CONTRACT = {
-  mainnet: "social.near",
-  testnet: "v1.social08.testnet"
-};
-
-const GAS_FEE_IN_ATOMIC_UNITS = "300000000000000";
-const NO_DEPOSIT = "0";
 
 export default class NearSocialPlugin
   implements DistributorPlugin<string, NearSocialConfig> {
@@ -47,12 +50,16 @@ export default class NearSocialPlugin
     const keyStore = new keyStores.InMemoryKeyStore();
     await keyStore.setKey(this.networkId, this.accountId, keyPair);
 
-    this.near = connect({
+    // Create Near instance
+    this.near = new Near({
       networkId: this.networkId,
+      keyStore,
       nodeUrl: this.networkId === "mainnet"
         ? "https://rpc.mainnet.near.org"
         : "https://rpc.testnet.near.org",
-      keyStore
+      walletUrl: this.networkId === "mainnet"
+        ? "https://mynearwallet.com/"
+        : "https://testnet.mynearwallet.com/",
     });
   }
 
@@ -91,13 +98,16 @@ export default class NearSocialPlugin
         }
       };
 
+      // Calculate the required deposit based on the data size
+      const depositAmount = calculateRequiredDeposit({ data });
+      
       // Sign and send transaction directly using callMethod
       await this.callMethod({
         contractId: SOCIAL_CONTRACT[this.networkId],
         method: "set",
         args: { data }, // Pass data as an argument
         gas: GAS_FEE_IN_ATOMIC_UNITS,
-        deposit: NO_DEPOSIT
+        deposit: depositAmount.toFixed(0) // Convert BigNumber to string with no decimal places
       });
 
       console.log("Successfully posted to NEAR Social");
@@ -112,6 +122,19 @@ export default class NearSocialPlugin
    * @param options - the options for the call
    * @returns - the resulting transaction
    */
+  /**
+   * Helper method to get an Account instance
+   * @returns Account instance
+   */
+  private getAccount(): nearAPI.Account {
+    if (!this.accountId || !this.near) {
+      throw new Error("NEAR Social plugin not initialized");
+    }
+    
+    const { connection } = this.near;
+    return new Account(connection, this.accountId);
+  }
+
   private async callMethod({
     contractId,
     method,
@@ -130,14 +153,20 @@ export default class NearSocialPlugin
     }
 
     try {
-      const account = await this.near.account(this.accountId);
+      // Get the account using our helper method
+      const account = this.getAccount();
 
+      // Ensure deposit is a valid integer string without decimal points
+      const depositValue = deposit.includes('.')
+        ? deposit.substring(0, deposit.indexOf('.'))
+        : deposit;
+        
       const outcome = await account.functionCall({
         contractId,
         methodName: method,
         args,
-        gas,
-        attachedDeposit: deposit
+        gas: BigInt(gas),
+        attachedDeposit: BigInt(depositValue || '0')
       });
 
       return providers.getTransactionLastResult(outcome);
