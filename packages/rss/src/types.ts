@@ -1,3 +1,4 @@
+import { Author, Category, Enclosure } from 'feed/lib/typings/index.js';
 /**
  * RSS Item interface representing an entry in an RSS feed
  */
@@ -5,19 +6,17 @@ export interface RssItem {
   // Core elements
   title?: string;
   content: string;
-  link?: string;
+  link: string;
   publishedAt: string;
   guid: string;
   
   // Additional elements
-  author?: string;
-  categories?: string[];
-  comments?: string;
-  enclosure?: {
-    url: string;
-    length: number;
-    type: string;
-  };
+  author?: Author[];
+  category?: Category[];
+  image?: string | Enclosure;
+  audio?: string | Enclosure;
+  video?: string | Enclosure;
+  enclosure?: Enclosure;
   source?: {
     url: string;
     title: string;
@@ -31,5 +30,5 @@ export interface RssItem {
 export interface RssConfig extends Record<string, unknown> {
   // Service configuration
   serviceUrl: string;            // URL of the RSS service
-  jwtToken?: string;             // JWT token for authentication
+  apiSecret: string;             // API secret for authentication
 }

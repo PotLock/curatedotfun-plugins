@@ -1,0 +1,61 @@
+import fs from "fs";
+import path from "path";
+import { FeedConfig } from "./types.js";
+
+// Environment variables validation
+const REQUIRED_ENV_VARS = [
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "API_SECRET"
+];
+
+// Validate required environment variables
+export function validateEnv(): void {
+  REQUIRED_ENV_VARS.forEach(varName => {
+    if (!process.env[varName]) {
+      console.error(`Error: Environment variable ${varName} is required`);
+      process.exit(1);
+    }
+  });
+}
+
+// API Secret for authentication
+export const API_SECRET = process.env.API_SECRET!;
+
+// Optional allowed origins for CORS (comma-separated list)
+export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['*'];
+
+// Default feed ID - since we're focusing on a single feed
+export const DEFAULT_FEED_ID = "main";
+
+// Default configuration
+const DEFAULT_CONFIG: FeedConfig = {
+  feed: {
+    title: "Default RSS Feed",
+    description: "A feed of curated content",
+    siteUrl: "https://example.com",
+    language: "en",
+    maxItems: 100,
+    preferredFormat: "rss"
+  }
+};
+
+// Load feed configuration from JSON file
+export function loadConfig(): FeedConfig {
+  const CONFIG_FILE_PATH = path.join(process.cwd(), 'feed-config.json');
+  
+  try {
+    const configFile = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
+    const config = JSON.parse(configFile) as FeedConfig;
+    console.log('Loaded feed configuration from feed-config.json');
+    return config;
+  } catch (error) {
+    console.warn('Could not load feed-config.json, using default configuration');
+    return DEFAULT_CONFIG;
+  }
+}
+
+// Export the loaded configuration
+export const feedConfig = loadConfig();

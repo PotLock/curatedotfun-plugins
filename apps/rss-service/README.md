@@ -4,31 +4,35 @@ A lightweight, scalable RSS feed service built with Hono.js and Upstash Redis. T
 
 ## Features
 
-- Create and manage RSS feeds
-- Add items to feeds
-- Retrieve feeds as standard RSS XML
-- JWT authentication for secure feed management
-- Configurable CORS for cross-origin requests
-- Designed for serverless and self-hosted environments
+- **Multiple Feed Formats**: Generate RSS 2.0, Atom, and JSON Feed formats
+- **Standard-Compliant URLs**: Access feeds via standard paths (/rss.xml, /atom.xml, /feed.json)
+- **Raw Data Option**: Get content without HTML via /raw.json for frontend customization
+- **HTML Sanitization**: Secure content handling with sanitize-html
+- **Simple Authentication**: API secret-based authentication for feed management
+- **Configurable CORS**: Cross-origin request support
+- **Flexible Deployment**: Deploy to various platforms (Vercel, Netlify, Heroku, Cloudflare)
 
 ## API Endpoints
 
 | Endpoint | Method | Description | Authentication |
 |----------|--------|-------------|----------------|
-| `/` | GET | Health check | No |
-| `/feeds` | POST | Create a new feed | Yes |
-| `/feeds/:id/items` | POST | Add an item to a feed | Yes |
-| `/feeds/:id` | GET | Get feed as RSS XML | No |
+| `/` | GET | Health check and redirect to preferred format | No |
+| `/rss.xml` | GET | Get feed as RSS 2.0 XML | No |
+| `/atom.xml` | GET | Get feed as Atom XML | No |
+| `/feed.json` | GET | Get feed as JSON Feed (with HTML content) | No |
+| `/raw.json` | GET | Get feed as JSON Feed (without HTML content) | No |
+| `/api/items` | GET | Get all items as JSON | No |
+| `/api/items` | POST | Add an item to the feed | Yes |
 
 ## Authentication
 
-The RSS service uses JWT for authentication. Protected endpoints require a valid JWT token in the Authorization header:
+The RSS service uses a simple API secret for authentication. Protected endpoints require the API secret in the Authorization header:
 
 ```
-Authorization: Bearer <your-jwt-token>
+Authorization: Bearer <your-api-secret>
 ```
 
-Public endpoints (health check and RSS feed retrieval) do not require authentication.
+Public endpoints (health check and feed retrieval) do not require authentication.
 
 ## Environment Variables
 
@@ -36,9 +40,37 @@ Public endpoints (health check and RSS feed retrieval) do not require authentica
 |----------|-------------|----------|
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | Yes |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token | Yes |
-| `JWT_SECRET` | Secret key for JWT authentication | Yes |
+| `API_SECRET` | Secret key for API authentication | Yes |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS (default: '*') | No |
 | `PORT` | Port to run the server on (default: 3001) | No |
+
+## Configuration
+
+The RSS service can be configured using a `feed-config.json` file in the project root:
+
+```json
+{
+  "feed": {
+    "title": "My RSS Feed",
+    "description": "A feed of curated content",
+    "siteUrl": "https://example.com",
+    "language": "en",
+    "copyright": "© 2025",
+    "favicon": "https://example.com/favicon.ico",
+    "author": {
+      "name": "Feed Author",
+      "email": "author@example.com",
+      "link": "https://author.example.com"
+    },
+    "preferredFormat": "rss",
+    "maxItems": 100
+  },
+  "customization": {
+    "categories": ["Technology", "News"],
+    "image": "https://example.com/logo.png"
+  }
+}
+```
 
 ## Deployment Options
 
@@ -77,7 +109,7 @@ Public endpoints (health check and RSS feed retrieval) do not require authentica
    ```
    heroku config:set UPSTASH_REDIS_REST_URL=your-redis-url
    heroku config:set UPSTASH_REDIS_REST_TOKEN=your-redis-token
-   heroku config:set JWT_SECRET=your-jwt-secret
+   heroku config:set API_SECRET=your-api-secret
    ```
 5. Deploy to Heroku:
    ```
@@ -110,7 +142,7 @@ Public endpoints (health check and RSS feed retrieval) do not require authentica
    ```
    wrangler secret put UPSTASH_REDIS_REST_URL
    wrangler secret put UPSTASH_REDIS_REST_TOKEN
-   wrangler secret put JWT_SECRET
+   wrangler secret put API_SECRET
    ```
 4. Deploy to Cloudflare Workers:
    ```
@@ -121,18 +153,15 @@ Public endpoints (health check and RSS feed retrieval) do not require authentica
 
 The RSS service is designed to work seamlessly with the `@curatedotfun/rss` plugin. To connect the plugin to the service:
 
-1. Initialize the plugin with the service URL and JWT token:
+1. Initialize the plugin with the service URL and API secret:
 
 ```typescript
 import RssPlugin from '@curatedotfun/rss';
 
 const rssPlugin = new RssPlugin();
 await rssPlugin.initialize({
-  feedId: 'my-feed',
-  title: 'My RSS Feed',
-  maxItems: '100',
   serviceUrl: 'https://your-rss-service-url.com',
-  jwtToken: 'your-jwt-token'
+  apiSecret: 'your-api-secret'
 });
 ```
 
@@ -140,10 +169,11 @@ await rssPlugin.initialize({
 
 ```typescript
 await rssPlugin.distribute({
-  input: 'New content to add to the feed',
-  config: {
-    feedId: 'my-feed',
-    title: 'My RSS Feed'
+  input: {
+    title: "My RSS Item",
+    content: "<p>Content with HTML formatting</p>",
+    link: "https://example.com/article",
+    publishedAt: new Date().toISOString()
   }
 });
 ```

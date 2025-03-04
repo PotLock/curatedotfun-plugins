@@ -3,13 +3,39 @@ import type {
   ActionArgs,
 } from "@curatedotfun/types";
 import { RssItem, RssConfig } from "./types";
+import { z } from "zod";
 
-export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
+// Define a schema for RSS item input
+// Content and link are required, everything else is optional
+const RssInputSchema = z.object({
+  title: z.string().optional(),
+  content: z.string(),
+  link: z.string(),
+  publishedAt: z.string().optional(),
+  guid: z.string().optional(),
+  author: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  comments: z.string().optional(),
+  enclosure: z.object({
+    url: z.string(),
+    length: z.number(),
+    type: z.string()
+  }).optional(),
+  source: z.object({
+    url: z.string(),
+    title: z.string()
+  }).optional(),
+  isPermaLink: z.boolean().optional()
+});
+
+type RssInput = z.infer<typeof RssInputSchema>;
+
+export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig> {
   readonly type = "distributor" as const;
   
   // Essential service properties
   private serviceUrl?: string;
-  private jwtToken?: string;
+  private apiSecret?: string;
 
   constructor() {
     // No initialization needed
@@ -22,10 +48,13 @@ export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
     if (!config.serviceUrl) {
       throw new Error("RSS plugin requires serviceUrl");
     }
+    if (!config.apiSecret) {
+      throw new Error("RSS plugin requires apiSecret");
+    }
 
     // Store only essential configuration
     this.serviceUrl = config.serviceUrl;
-    this.jwtToken = config.jwtToken;
+    this.apiSecret = config.apiSecret;
 
     // Check if service is running with a health check
     try {
@@ -45,24 +74,43 @@ export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
   }
 
   async distribute({
-    input: content,
+    input,
     config,
-  }: ActionArgs<string, RssConfig>): Promise<void> {
-    if (!this.serviceUrl) {
-      throw new Error("RSS plugin not initialized");
+  }: ActionArgs<RssInput, RssConfig>): Promise<void> {
+    try {
+      // Validate input
+      const validatedInput = RssInputSchema.parse(input);
+      
+      // Create a complete RssItem with defaults for missing fields
+      const item: RssItem = {
+        // Content & Link are required
+        content: validatedInput.content,
+        link: validatedInput.link,
+        
+        // Required fields with defaults if not provided
+        publishedAt: validatedInput.publishedAt || new Date().toISOString(),
+        guid: validatedInput.guid || `item-${Date.now()}`,
+        
+        // Optional fields with defaults
+        title: validatedInput.title || "New Update",
+        
+        // Optional fields that are passed through if present
+        ...(validatedInput.author && { author: validatedInput.author }),
+        ...(validatedInput.categories && { categories: validatedInput.categories }),
+        ...(validatedInput.comments && { comments: validatedInput.comments }),
+        ...(validatedInput.enclosure && { enclosure: validatedInput.enclosure }),
+        ...(validatedInput.source && { source: validatedInput.source }),
+        ...(validatedInput.isPermaLink !== undefined && { isPermaLink: validatedInput.isPermaLink })
+      };
+      
+      // Save to RSS service
+      await this.saveItem(item);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new Error(`Invalid RSS item: ${error.message}`);
+      }
+      throw error;
     }
-
-    // Create a basic RSS item from the input content
-    const item: RssItem = {
-      title: "New Update", // Default title
-      content,
-      link: "",
-      publishedAt: new Date().toISOString(),
-      guid: `item-${Date.now()}`
-    };
-
-    // Save to RSS service
-    await this.saveItem(item);
   }
 
   /**
@@ -78,7 +126,7 @@ export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(this.jwtToken ? { 'Authorization': `Bearer ${this.jwtToken}` } : {})
+          ...(this.apiSecret ? { 'Authorization': `Bearer ${this.apiSecret}` } : {})
         },
         body: JSON.stringify(item)
       });
