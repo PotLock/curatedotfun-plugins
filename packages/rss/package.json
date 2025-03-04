@@ -36,6 +36,9 @@
     "dev": "rspack serve",
     "lint": "tsc --noEmit"
   },
+  "dependencies": {
+    "feed": "^4.2.2"
+  },
   "devDependencies": {
     "@curatedotfun/types": "workspace:*",
     "@curatedotfun/utils": "workspace:*",

@@ -1,32 +1,16 @@
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import type {
   DistributorPlugin,
-  DBOperations,
-  RssItem,
   ActionArgs,
 } from "@curatedotfun/types";
 import { RssService } from "./rss.service";
-
-interface RssConfig {
-  feedId: string;
-  title: string;
-  maxItems?: string;
-  path?: string;
-  [key: string]: string | undefined;
-}
+import { RssItem, RssConfig } from "./types";
 
 export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
   readonly type = "distributor" as const;
-  private services: Map<string, RssService> = new Map();
-  private dbOps?: DBOperations;
+  private service?: RssService;
 
-  getServices(): Map<string, RssService> {
-    return this.services;
-  }
-
-  constructor(dbOperations?: DBOperations) {
-    this.dbOps = dbOperations;
+  constructor() {
+    // No initialization needed
   }
 
   async initialize(config?: RssConfig): Promise<void> {
@@ -39,95 +23,54 @@ export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
     if (!config.feedId) {
       throw new Error("RSS plugin requires feedId");
     }
+    if (!config.serviceUrl) {
+      throw new Error("RSS plugin requires serviceUrl");
+    }
 
     const maxItems = config.maxItems ? parseInt(config.maxItems) : 100;
 
-    // Create a new RSS service for this feed
-    const service = new RssService(
+    // Create a new RSS service for this feed with enhanced configuration
+    this.service = new RssService(
       config.feedId,
       config.title,
       maxItems,
-      config.path,
-      this.dbOps,
+      {
+        serviceUrl: config.serviceUrl,
+        jwtToken: config.jwtToken,
+        description: config.description,
+        link: config.link,
+        language: config.language,
+        copyright: config.copyright,
+        favicon: config.favicon
+      }
     );
 
-    this.services.set(config.feedId, service);
+    // Initialize the service (creates the feed on the RSS service if needed)
+    await this.service.initialize();
   }
 
   async distribute({
     input: content,
     config,
   }: ActionArgs<string, RssConfig>): Promise<void> {
-    if (!config?.feedId) {
-      throw new Error("RSS plugin requires feedId in config");
-    }
-    const service = this.services.get(config.feedId);
-    if (!service) {
-      throw new Error("RSS plugin not initialized for this feed");
+    if (!this.service) {
+      throw new Error("RSS plugin not initialized");
     }
 
+    // Create a basic RSS item from the input content
     const item: RssItem = {
-      title: "New Update",
+      title: "New Update", // Default title
       content,
-      link: "https://twitter.com/", // TODO: Update with actual link
+      link: "",
       publishedAt: new Date().toISOString(),
-      guid: Date.now().toString(),
+      guid: `item-${Date.now()}`
     };
 
-    // Save to database
-    service.saveItem(item);
-
-    // Write to file if path is provided (backward compatibility)
-    const filePath = service.getPath();
-    if (filePath) {
-      await this.writeToFile(service, filePath);
-    }
-  }
-
-  private async writeToFile(
-    service: RssService,
-    filePath: string,
-  ): Promise<void> {
-    const items = await service.getItems();
-
-    const feed = `<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
-  <channel>
-    <title>${service.getTitle()}</title>
-    <link>https://twitter.com/</link>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    ${items
-      .map(
-        (item) => `
-    <item>
-      <title>${this.escapeXml(item.title || "")}</title>
-      <description>${this.escapeXml(item.content)}</description>
-      <link>${item.link || ""}</link>
-      <pubDate>${new Date(item.publishedAt).toUTCString()}</pubDate>
-      <guid>${item.guid || ""}</guid>
-    </item>`,
-      )
-      .join("\n")}
-  </channel>
-</rss>`;
-
-    // Ensure directory exists
-    const dir = path.dirname(filePath);
-    await mkdir(dir, { recursive: true });
-    await writeFile(filePath, feed, "utf-8");
-  }
-
-  private escapeXml(unsafe: string): string {
-    return unsafe
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
+    // Save to RSS service
+    await this.service.saveItem(item);
   }
 
   async shutdown(): Promise<void> {
-    // Clear all services when plugin shuts down
-    this.services.clear();
+    // No cleanup needed
   }
 }
