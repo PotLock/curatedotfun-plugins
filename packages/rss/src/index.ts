@@ -2,12 +2,14 @@ import type {
   DistributorPlugin,
   ActionArgs,
 } from "@curatedotfun/types";
-import { RssService } from "./rss.service";
 import { RssItem, RssConfig } from "./types";
 
 export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
   readonly type = "distributor" as const;
-  private service?: RssService;
+  
+  // Essential service properties
+  private serviceUrl?: string;
+  private jwtToken?: string;
 
   constructor() {
     // No initialization needed
@@ -17,43 +19,36 @@ export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
     if (!config) {
       throw new Error("RSS plugin requires configuration");
     }
-    if (!config.title) {
-      throw new Error("RSS plugin requires title");
-    }
-    if (!config.feedId) {
-      throw new Error("RSS plugin requires feedId");
-    }
     if (!config.serviceUrl) {
       throw new Error("RSS plugin requires serviceUrl");
     }
 
-    const maxItems = config.maxItems ? parseInt(config.maxItems) : 100;
+    // Store only essential configuration
+    this.serviceUrl = config.serviceUrl;
+    this.jwtToken = config.jwtToken;
 
-    // Create a new RSS service for this feed with enhanced configuration
-    this.service = new RssService(
-      config.feedId,
-      config.title,
-      maxItems,
-      {
-        serviceUrl: config.serviceUrl,
-        jwtToken: config.jwtToken,
-        description: config.description,
-        link: config.link,
-        language: config.language,
-        copyright: config.copyright,
-        favicon: config.favicon
+    // Check if service is running with a health check
+    try {
+      const healthCheckResponse = await fetch(`${this.serviceUrl}/`, {
+        method: 'GET'
+      });
+
+      if (!healthCheckResponse.ok) {
+        console.warn(`Warning: RSS service health check returned status ${healthCheckResponse.status}`);
+      } else {
+        console.log('RSS service is running');
       }
-    );
-
-    // Initialize the service (creates the feed on the RSS service if needed)
-    await this.service.initialize();
+    } catch (error) {
+      console.error('Error checking RSS service:', error);
+      throw new Error(`Failed to initialize RSS feed: ${error}`);
+    }
   }
 
   async distribute({
     input: content,
     config,
   }: ActionArgs<string, RssConfig>): Promise<void> {
-    if (!this.service) {
+    if (!this.serviceUrl) {
       throw new Error("RSS plugin not initialized");
     }
 
@@ -67,7 +62,35 @@ export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
     };
 
     // Save to RSS service
-    await this.service.saveItem(item);
+    await this.saveItem(item);
+  }
+
+  /**
+   * Save an item to the RSS service
+   */
+  private async saveItem(item: RssItem): Promise<void> {
+    if (!this.serviceUrl) {
+      throw new Error('RSS service URL is required');
+    }
+
+    try {
+      const response = await fetch(`${this.serviceUrl}/api/items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(this.jwtToken ? { 'Authorization': `Bearer ${this.jwtToken}` } : {})
+        },
+        body: JSON.stringify(item)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to save item to RSS service: ${errorData.error || response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error saving item to RSS service:', error);
+      throw error;
+    }
   }
 
   async shutdown(): Promise<void> {

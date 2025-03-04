@@ -4,6 +4,8 @@ import { Redis } from "@upstash/redis";
 import { cors } from "hono/cors";
 import jwt from "jsonwebtoken";
 import { Feed } from "feed";
+import fs from "fs";
+import path from "path";
 
 // Environment variables validation
 const REQUIRED_ENV_VARS = [
@@ -23,6 +25,31 @@ REQUIRED_ENV_VARS.forEach(varName => {
 const JWT_SECRET = process.env.JWT_SECRET!;
 // Optional allowed origins for CORS (comma-separated list)
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
+
+// Load feed configuration from JSON file
+const CONFIG_FILE_PATH = path.join(process.cwd(), 'feed-config.json');
+let feedConfig: any;
+
+try {
+  const configFile = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
+  feedConfig = JSON.parse(configFile);
+  console.log('Loaded feed configuration from feed-config.json');
+} catch (error) {
+  console.warn('Could not load feed-config.json, using default configuration');
+  feedConfig = {
+    feed: {
+      title: "Default RSS Feed",
+      description: "A feed of curated content",
+      siteUrl: "https://example.com",
+      language: "en",
+      maxItems: 100,
+      preferredFormat: "rss"
+    }
+  };
+}
+
+// Default feed ID - since we're focusing on a single feed
+const DEFAULT_FEED_ID = "main";
 
 interface RssItem {
   // Core elements
@@ -48,16 +75,8 @@ interface RssItem {
   isPermaLink?: boolean;
 }
 
-interface FeedConfig {
-  id: string;
-  title: string;
-  maxItems: number;
-  description?: string;
-  link?: string;
-  language?: string;
-  copyright?: string;
-  favicon?: string;
-}
+// Format types supported by the service
+type FeedFormat = 'rss' | 'atom' | 'json';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -78,7 +97,8 @@ app.use("*", cors({
 // Authentication middleware
 const authenticate = async (c: any, next: () => Promise<void>) => {
   // Skip authentication for public endpoints
-  if (c.req.path === '/' || (c.req.method === 'GET' && c.req.path.startsWith('/feeds/'))) {
+  const publicPaths = ['/', '/rss.xml', '/atom.xml', '/feed.json', '/api/items'];
+  if (c.req.method === 'GET' && (publicPaths.includes(c.req.path) || c.req.path === '/')) {
     return await next();
   }
 
@@ -100,80 +120,52 @@ const authenticate = async (c: any, next: () => Promise<void>) => {
 // Apply authentication middleware
 app.use('*', authenticate);
 
-// Health check
-app.get("/", (c) => c.text("RSS Service is running"));
-
-// Create a new feed
-app.post("/feeds", async (c) => {
-  const { id, title, maxItems = 100, description, link, language, copyright, favicon } = await c.req.json<FeedConfig>();
-  
-  if (!id || !title) {
-    return c.json({ error: "Missing required fields" }, 400);
-  }
-
-  const feedConfig: FeedConfig = { 
-    id, 
-    title, 
-    maxItems,
-    description,
-    link,
-    language,
-    copyright,
-    favicon
-  };
-  
-  await redis.set(`feed:${id}`, JSON.stringify(feedConfig));
-  
-  return c.json({ message: "Feed created successfully", feed: feedConfig });
-});
-
-// Add item to feed
-app.post("/feeds/:id/items", async (c) => {
-  const feedId = c.req.param("id");
-  const item = await c.req.json<RssItem>();
-  
-  const feed = await redis.get<string>(`feed:${feedId}`);
-  if (!feed) {
-    return c.json({ error: "Feed not found" }, 404);
-  }
-
-  // Add item to feed's items list
-  await redis.lpush(`feed:${feedId}:items`, JSON.stringify(item));
-  
-  // Trim to max items
-  const { maxItems = 100 } = JSON.parse(feed);
-  await redis.ltrim(`feed:${feedId}:items`, 0, maxItems - 1);
-  
-  return c.json({ message: "Item added successfully", item });
-});
-
-// Get feed as RSS
-app.get("/feeds/:id", async (c) => {
-  const feedId = c.req.param("id");
-  
-  const feedData = await redis.get<string>(`feed:${feedId}`);
-  if (!feedData) {
-    return c.json({ error: "Feed not found" }, 404);
-  }
-
-  const feedConfig = JSON.parse(feedData) as FeedConfig;
-  const items = await redis.lrange<string[]>(`feed:${feedId}:items`, 0, -1);
+// Helper function to generate feed in different formats
+async function generateFeed(format: FeedFormat = 'rss'): Promise<{ content: string, contentType: string }> {
+  // Get items from Redis
+  const items = await redis.lrange<string[]>(`feed:${DEFAULT_FEED_ID}:items`, 0, feedConfig.feed.maxItems - 1);
   
   // Create a new Feed instance
   const feed = new Feed({
-    title: feedConfig.title,
-    description: feedConfig.description || `RSS feed for ${feedConfig.title}`,
-    id: c.req.url,
-    link: feedConfig.link || c.req.url,
-    language: feedConfig.language || "en",
-    favicon: feedConfig.favicon,
-    copyright: feedConfig.copyright,
+    title: feedConfig.feed.title,
+    description: feedConfig.feed.description,
+    id: feedConfig.feed.siteUrl,
+    link: feedConfig.feed.siteUrl,
+    language: feedConfig.feed.language || "en",
+    favicon: feedConfig.feed.favicon,
+    copyright: feedConfig.feed.copyright,
     updated: new Date(),
-    generator: "CuratedFun RSS Service"
+    generator: "CuratedFun RSS Service",
+    feedLinks: {
+      rss: `${feedConfig.feed.siteUrl}/rss.xml`,
+      atom: `${feedConfig.feed.siteUrl}/atom.xml`,
+      json: `${feedConfig.feed.siteUrl}/feed.json`
+    }
   });
 
+  // Add author if provided
+  if (feedConfig.feed.author) {
+    feed.addAuthor({
+      name: feedConfig.feed.author.name,
+      email: feedConfig.feed.author.email,
+      link: feedConfig.feed.author.link
+    });
+  }
+
+  // Add categories if provided
+  if (feedConfig.customization?.categories) {
+    feedConfig.customization.categories.forEach((category: string) => {
+      feed.addCategory(category);
+    });
+  }
+
+  // Add image if provided
+  if (feedConfig.customization?.image) {
+    feed.image = feedConfig.customization.image;
+  }
+
   // Add items to the feed
-  items.forEach(itemJson => {
+  items.forEach((itemJson: string) => {
     const item = JSON.parse(itemJson) as RssItem;
     
     feed.addItem({
@@ -195,21 +187,116 @@ app.get("/feeds/:id", async (c) => {
     });
   });
 
-  // Generate RSS 2.0 feed
-  const rss = feed.rss2();
+  // Generate feed in requested format
+  let content: string;
+  let contentType: string;
+  
+  switch (format) {
+    case 'atom':
+      content = feed.atom1();
+      contentType = 'application/atom+xml; charset=utf-8';
+      break;
+    case 'json':
+      content = feed.json1();
+      contentType = 'application/json; charset=utf-8';
+      break;
+    case 'rss':
+    default:
+      content = feed.rss2();
+      contentType = 'application/rss+xml; charset=utf-8';
+      break;
+  }
 
-  return new Response(rss, {
-    headers: {
-      "Content-Type": "application/xml",
-    },
+  return { content, contentType };
+}
+
+// Health check and redirect to preferred format
+app.get("/", async (c) => {
+  const preferredFormat = feedConfig.feed.preferredFormat || 'rss';
+  const formatExtension = preferredFormat === 'json' ? 'json' : `${preferredFormat}.xml`;
+  return c.redirect(`/${formatExtension}`);
+});
+
+// Standard-compliant URLs for different formats
+app.get("/rss.xml", async (c) => {
+  const { content, contentType } = await generateFeed('rss');
+  return new Response(content, {
+    headers: { "Content-Type": contentType }
   });
 });
 
-// Start server if not in production (Vercel will handle this in prod)
-if (process.env.NODE_ENV !== "production") {
-  serve({
-    fetch: app.fetch,
-    port: 3001,
+app.get("/atom.xml", async (c) => {
+  const { content, contentType } = await generateFeed('atom');
+  return new Response(content, {
+    headers: { "Content-Type": contentType }
   });
-  console.log("RSS Service running at http://localhost:3001");
+});
+
+app.get("/feed.json", async (c) => {
+  const { content, contentType } = await generateFeed('json');
+  return new Response(content, {
+    headers: { "Content-Type": contentType }
+  });
+});
+
+// API endpoint to get all items as JSON
+app.get("/api/items", async (c) => {
+  const items = await redis.lrange<string[]>(`feed:${DEFAULT_FEED_ID}:items`, 0, feedConfig.feed.maxItems - 1);
+  const parsedItems = items.map(item => JSON.parse(item));
+  return c.json(parsedItems);
+});
+
+// Add item to feed
+app.post("/api/items", async (c) => {
+  const item = await c.req.json<RssItem>();
+  
+  if (!item.content || !item.guid) {
+    return c.json({ error: "Missing required fields: content and guid are required" }, 400);
+  }
+
+  // Add item to feed's items list
+  await redis.lpush(`feed:${DEFAULT_FEED_ID}:items`, JSON.stringify(item));
+  
+  // Trim to max items
+  await redis.ltrim(`feed:${DEFAULT_FEED_ID}:items`, 0, feedConfig.feed.maxItems - 1);
+  
+  return c.json({ message: "Item added successfully", item });
+});
+
+// Initialize feed in Redis if it doesn't exist
+async function initializeFeed() {
+  const exists = await redis.exists(`feed:${DEFAULT_FEED_ID}`);
+  if (!exists) {
+    console.log(`Initializing feed: ${DEFAULT_FEED_ID}`);
+    await redis.set(`feed:${DEFAULT_FEED_ID}`, JSON.stringify({
+      id: DEFAULT_FEED_ID,
+      ...feedConfig.feed
+    }));
+  }
 }
+
+// Start server
+async function startServer() {
+  // Initialize feed
+  await initializeFeed();
+  
+  // Start server if not in production (Vercel will handle this in prod)
+  if (process.env.NODE_ENV !== "production") {
+    const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+    serve({
+      fetch: app.fetch,
+      port,
+    });
+    console.log(`RSS Service running at http://localhost:${port}`);
+    console.log(`Available formats:`);
+    console.log(`- RSS 2.0: http://localhost:${port}/rss.xml`);
+    console.log(`- Atom: http://localhost:${port}/atom.xml`);
+    console.log(`- JSON Feed: http://localhost:${port}/feed.json`);
+    console.log(`- API: http://localhost:${port}/api/items`);
+  }
+}
+
+startServer().catch(console.error);
+
+// Export the Hono app for serverless environments
+export default app;
