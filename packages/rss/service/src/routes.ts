@@ -76,6 +76,8 @@ export async function handleGetItems(c: Context): Promise<Response> {
 export async function handleAddItem(c: Context): Promise<Response> {
   const item = await c.req.json<RssItem>();
 
+  console.log("adding item", item);
+
   // Validate required fields
   if (!item.content) {
     return c.json({

@@ -105,63 +105,82 @@ interface RssInput {
 
 ### Using Transformer Plugins
 
-To format your data properly for RSS, you can use transformer plugins like `@curatedotfun/simple-transform` or `@curatedotfun/object-transform` before the RSS plugin.
+To format your data properly for RSS, you can use transformer plugins like `@curatedotfun/ai-transform` and `@curatedotfun/object-transform` before the RSS plugin. The recommended pattern is to use AI transformation first to generate content, then use object transformation to map the AI-generated content to the RSS item schema.
 
-#### Example with Simple Transform
-
-```json
-{
-  "outputs": {
-    "stream": {
-      "enabled": true,
-      "distribute": [
-        {
-          "plugin": "@curatedotfun/simple-transform",
-          "config": {
-            "template": "<h2>Tweet by {{username}}</h2><p>{{content}}</p>{{#curatorNotes}}<blockquote>Curator's Note: {{.}}</blockquote>{{/curatorNotes}}<p><a href=\"https://twitter.com/{{username}}/status/{{tweetId}}\">View original tweet</a></p>"
-          }
-        },
-        {
-          "plugin": "@curatedotfun/rss",
-          "config": {
-            "serviceUrl": "https://your-rss-service-url.com",
-            "apiSecret": "{API_SECRET}"
-          }
-        }
-      ]
-    }
-  }
-}
-```
-
-This transforms the Twitter submission into HTML content for the RSS feed.
-
-#### Example with Object Transform
-
-For more complex transformations, use the Object Transform plugin to create a structured RSS item:
+#### Recommended Transformation Pipeline
 
 ```json
 {
   "outputs": {
     "stream": {
       "enabled": true,
-      "distribute": [
+      "transform": [
         {
-          "plugin": "@curatedotfun/object-transform",
+          "plugin": "@curatedotfun/ai-transform",
           "config": {
-            "mappings": {
-              "title": "Tweet by {{username}}",
-              "content": "<p>{{content}}</p>{{#curatorNotes}}<blockquote>Curator's Note: {{.}}</blockquote>{{/curatorNotes}}",
-              "link": "https://twitter.com/{{username}}/status/{{tweetId}}",
-              "publishedAt": "{{createdAt}}",
-              "guid": "tweet-{{tweetId}}"
+            "prompt": "Summarize the content into a concise news flash, incorporating relevant details from the curator's notes. Maintain a neutral, third-person tone. Mention the author if relevant, or simply convey the information.",
+            "apiKey": "{OPENROUTER_API_KEY}",
+            "schema": {
+              "title": {
+                "type": "string",
+                "description": "Title derived from summary of content"
+              },
+              "summary": {
+                "type": "string",
+                "description": "Summary of content influenced by curator notes"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Relevant tags for the content"
+              }
             }
           }
         },
         {
+          "plugin": "@curatedotfun/object-transform",
+          "config": {
+            "mappings": {
+              "title": "{{title}}",
+              "content": "<h2>{{title}}</h2><p>{{summary}}</p>",
+              "description": "{{summary}}",
+              "link": "https://example.com/posts/{{id}}",
+              "publishedAt": "{{publishedAt}}",
+              "guid": "post-{{id}}",
+              "author": {
+                "name": "{{author.name}}",
+                "email": "{{author.email}}",
+                "link": "{{author.url}}"
+              },
+              "image": {
+                "url": "{{image.url}}",
+                "type": "{{image.type}}",
+                "length": "{{image.size}}"
+              },
+              "audio": "{{audio.url}}",
+              "video": {
+                "url": "{{video.url}}",
+                "type": "{{video.type}}",
+                "length": "{{video.size}}"
+              },
+              "categories": ["{{tags}}", "news", "updates"],
+              "copyright": "© {{currentYear}} Example Company",
+              "source": {
+                "url": "{{sourceUrl}}",
+                "title": "{{sourceTitle}}"
+              },
+              "isPermaLink": true
+            }
+          }
+        }
+      ],
+      "distribute": [
+        {
           "plugin": "@curatedotfun/rss",
           "config": {
-            "serviceUrl": "https://your-rss-service-url.com",
+            "serviceUrl": "http://localhost:4001",
             "apiSecret": "{API_SECRET}"
           }
         }
@@ -171,7 +190,71 @@ For more complex transformations, use the Object Transform plugin to create a st
 }
 ```
 
-This creates a fully structured RSS item with title, content, link, publication date, and a unique identifier.
+This example demonstrates a complete transformation pipeline that:
+
+1. First uses AI transformation to generate a title, summary, and tags from the input content
+2. Then uses object transformation to map the AI-generated content to all available RSS item fields:
+   - Core fields: title, content, description, link, publishedAt, guid
+   - Author information: name, email, link
+   - Media: image, audio, video
+   - Categories: tags from AI plus additional static categories
+   - Additional metadata: copyright, source, isPermaLink
+
+#### Simplified Example
+
+For a simpler implementation, you can use just the essential fields:
+
+```json
+{
+  "outputs": {
+    "stream": {
+      "enabled": true,
+      "transform": [
+        {
+          "plugin": "@curatedotfun/ai-transform",
+          "config": {
+            "prompt": "Transform this into an engaging news article with a title and content.",
+            "apiKey": "{OPENROUTER_API_KEY}",
+            "schema": {
+              "title": {
+                "type": "string",
+                "description": "Engaging title for the article"
+              },
+              "content": {
+                "type": "string",
+                "description": "Article content in HTML format"
+              }
+            }
+          }
+        },
+        {
+          "plugin": "@curatedotfun/object-transform",
+          "config": {
+            "mappings": {
+              "title": "{{title}}",
+              "content": "{{content}}",
+              "link": "https://example.com/posts/{{id}}",
+              "publishedAt": "{{timestamp}}",
+              "guid": "post-{{id}}"
+            }
+          }
+        }
+      ],
+      "distribute": [
+        {
+          "plugin": "@curatedotfun/rss",
+          "config": {
+            "serviceUrl": "http://localhost:4001",
+            "apiSecret": "{API_SECRET}"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+This creates a basic RSS item with just the essential fields: title, content, link, publication date, and a unique identifier.
 
 ## 🔐 Security Considerations
 

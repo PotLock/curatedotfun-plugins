@@ -33,7 +33,9 @@
   ],
   "scripts": {
     "build": "rspack build && tsc -p tsconfig.build.json",
-    "dev": "rspack serve",
+    "dev": "concurrently \"bun run dev:main\" \"bun run dev:service\"",
+    "dev:main": "rspack serve",
+    "dev:service": "cd service && bun run build && bun run start",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
@@ -44,6 +46,7 @@
     "@curatedotfun/utils": "workspace:*",
     "@rspack/cli": "latest",
     "@types/node": "^20.0.0",
+    "concurrently": "^9.1.2",
     "typescript": "^5.0.0"
   }
 }

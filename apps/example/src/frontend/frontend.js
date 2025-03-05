@@ -111,7 +111,8 @@ const PLUGIN_DEFAULTS = {
     channelId: "@your_channel",
   },
   "@curatedotfun/rss": {
-    url: "https://example.com/feed.xml",
+    serviceUrl: "http://localhost:4001",
+    apiSecret: "{API_SECRET}",
   },
   "@curatedotfun/supabase": {
     url: "{SUPABASE_URL}",
@@ -130,11 +131,32 @@ const DEFAULT_CONFIG = {
   transform: [
     {
       plugin: "@curatedotfun/ai-transform",
-      config: PLUGIN_DEFAULTS["@curatedotfun/ai-transform"],
+      config: {
+        prompt: "Transform this into an engaging news article with a title and content.",
+        apiKey: "{OPENROUTER_API_KEY}",
+        schema: {
+          title: {
+            type: "string",
+            description: "Engaging title for the article"
+          },
+          content: {
+            type: "string",
+            description: "Article content in HTML format"
+          }
+        }
+      },
     },
     {
       plugin: "@curatedotfun/object-transform",
-      config: PLUGIN_DEFAULTS["@curatedotfun/object-transform"],
+      config: {
+        mappings: {
+          title: "{{title}}",
+          content: "{{content}}",
+          link: "https://example.com/posts/{{id}}",
+          publishedAt: "{{timestamp}}",
+          guid: "post-{{id}}"
+        }
+      },
     },
     {
       plugin: "@curatedotfun/simple-transform",
@@ -149,6 +171,10 @@ const DEFAULT_CONFIG = {
     {
       plugin: "@curatedotfun/near-social",
       config: PLUGIN_DEFAULTS["@curatedotfun/near-social"],
+    },
+    {
+      plugin: "@curatedotfun/rss",
+      config: PLUGIN_DEFAULTS["@curatedotfun/rss"],
     },
   ],
 };

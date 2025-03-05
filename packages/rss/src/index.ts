@@ -1,38 +1,74 @@
-import type {
-  DistributorPlugin,
-  ActionArgs,
-} from "@curatedotfun/types";
-import { RssItem, RssConfig } from "./types";
-import { z } from "zod";
 
-// Define a schema for RSS item input
-// Content and link are required, everything else is optional
-const RssInputSchema = z.object({
-  title: z.string().optional(),
-  content: z.string(),
-  link: z.string(),
-  publishedAt: z.string().optional(),
-  guid: z.string().optional(),
-  author: z.string().optional(),
-  categories: z.array(z.string()).optional(),
-  comments: z.string().optional(),
+import type {
+  ActionArgs,
+  DistributorPlugin,
+} from "@curatedotfun/types";
+import { Category, Enclosure } from "feed/lib/typings/index.js";
+import { z } from "zod";
+import { RssItem } from "../service/src/types";
+import { RssConfig } from "./types";
+
+// Define a schema for TwitterSubmission input with additional fields for RSS compatibility
+const RssItemSchema = z.object({
+  // Core fields
+  title: z.string().optional(), // Optional custom title
+  content: z.string().optional(), // Content of the item
+  description: z.string().optional(), // Optional description/summary
+  link: z.string().optional(), // URL to the item
+  publishedAt: z.string().optional(), // Publication date
+  guid: z.string().optional(), // Unique identifier
+
+  // Author information
+  author: z.object({
+    name: z.string(),
+    email: z.string().optional(),
+    link: z.string().optional()
+  }).optional().or(z.array(z.object({
+    name: z.string(),
+    email: z.string().optional(),
+    link: z.string().optional()
+  }))), // Author(s) information
+
+  // Media and categorization
+  image: z.string().optional().or(z.object({
+    url: z.string(),
+    type: z.string().optional(),
+    length: z.number().optional(),
+  })), // Image URL or enclosure
+  audio: z.string().optional().or(z.object({
+    url: z.string(),
+    type: z.string().optional(),
+    length: z.number().optional(),
+  })), // Audio URL or enclosure
+  video: z.string().optional().or(z.object({
+    url: z.string(),
+    type: z.string().optional(),
+    length: z.number().optional(),
+  })), // Video URL or enclosure
   enclosure: z.object({
     url: z.string(),
-    length: z.number(),
-    type: z.string()
-  }).optional(),
+    type: z.string().optional(),
+    length: z.number().optional(),
+  }).optional(), // Generic enclosure
+  categories: z.array(z.string()).optional().or(z.array(z.object({
+    name: z.string(),
+    domain: z.string().optional()
+  }))), // Categories/tags
+
+  // Additional metadata
+  copyright: z.string().optional(), // Copyright information
   source: z.object({
     url: z.string(),
     title: z.string()
-  }).optional(),
-  isPermaLink: z.boolean().optional()
+  }).optional(), // Source information
+  isPermaLink: z.boolean().optional() // Whether guid is a permalink
 });
 
-type RssInput = z.infer<typeof RssInputSchema>;
+type RssInput = z.infer<typeof RssItemSchema>;
 
 export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig> {
   readonly type = "distributor" as const;
-  
+
   // Essential service properties
   private serviceUrl?: string;
   private apiSecret?: string;
@@ -75,34 +111,67 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
 
   async distribute({
     input,
-    config,
   }: ActionArgs<RssInput, RssConfig>): Promise<void> {
     try {
       // Validate input
-      const validatedInput = RssInputSchema.parse(input);
-      
+      const validatedInput = RssItemSchema.parse(input);
+
       // Create a complete RssItem with defaults for missing fields
       const item: RssItem = {
-        // Content & Link are required
-        content: validatedInput.content,
-        link: validatedInput.link,
-        
-        // Required fields with defaults if not provided
-        publishedAt: validatedInput.publishedAt || new Date().toISOString(),
-        guid: validatedInput.guid || `item-${Date.now()}`,
-        
-        // Optional fields with defaults
-        title: validatedInput.title || "New Update",
-        
-        // Optional fields that are passed through if present
-        ...(validatedInput.author && { author: validatedInput.author }),
-        ...(validatedInput.categories && { categories: validatedInput.categories }),
-        ...(validatedInput.comments && { comments: validatedInput.comments }),
-        ...(validatedInput.enclosure && { enclosure: validatedInput.enclosure }),
+        // Required fields - ensure we have values for these
+        content: validatedInput.content || validatedInput.description || '',
+        link: validatedInput.link || '',
+        guid: validatedInput.guid || validatedInput.link || String(Date.now()), // Use link as fallback or timestamp
+        // Ensure dates are in UTC
+        published: validatedInput.publishedAt
+          ? new Date(validatedInput.publishedAt)
+          : new Date(),
+        date: new Date(), // Current date
+
+        // Title is required in the Item interface
+        title: validatedInput.title || 'Untitled',
+
+        // Handle author(s)
+        ...(validatedInput.author && {
+          author: Array.isArray(validatedInput.author)
+            ? validatedInput.author
+            : [validatedInput.author]
+        }),
+
+        // Handle categories
+        ...(validatedInput.categories && {
+          category: Array.isArray(validatedInput.categories)
+            ? (typeof validatedInput.categories[0] === 'string'
+              ? validatedInput.categories.map(cat => ({ name: cat as string } as Category))
+              : validatedInput.categories as Category[])
+            : [{ name: validatedInput.categories as unknown as string } as Category]
+        }),
+
+        // Handle media enclosures
+        ...(validatedInput.image && {
+          image: typeof validatedInput.image === 'string'
+            ? validatedInput.image
+            : validatedInput.image as Enclosure
+        }),
+
+        ...(validatedInput.audio && {
+          audio: typeof validatedInput.audio === 'string'
+            ? validatedInput.audio
+            : validatedInput.audio as Enclosure
+        }),
+
+        ...(validatedInput.video && {
+          video: typeof validatedInput.video === 'string'
+            ? validatedInput.video
+            : validatedInput.video as Enclosure
+        }),
+
+        // Additional metadata
+        ...(validatedInput.enclosure && { enclosure: validatedInput.enclosure as Enclosure }),
         ...(validatedInput.source && { source: validatedInput.source }),
         ...(validatedInput.isPermaLink !== undefined && { isPermaLink: validatedInput.isPermaLink })
       };
-      
+
       // Save to RSS service
       await this.saveItem(item);
     } catch (error) {
@@ -120,6 +189,8 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
     if (!this.serviceUrl) {
       throw new Error('RSS service URL is required');
     }
+
+    console.log("saving item", item);
 
     try {
       const response = await fetch(`${this.serviceUrl}/api/items`, {

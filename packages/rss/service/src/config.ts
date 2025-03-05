@@ -1,3 +1,4 @@
+import "dotenv/config";
 import fs from "fs";
 import path from "path";
 import { FeedConfig } from "./types.js";
@@ -22,7 +23,7 @@ export function validateEnv(): void {
       process.exit(1);
     }
   });
-  
+
   // Only check for Redis env vars if we're not using the mock
   if (process.env.USE_REDIS_MOCK !== 'true') {
     REDIS_ENV_VARS.forEach(varName => {
