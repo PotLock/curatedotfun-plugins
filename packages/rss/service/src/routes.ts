@@ -15,9 +15,9 @@ export async function handleRoot(c: Context): Promise<Response> {
  * Handle RSS format request
  */
 export async function handleRss(): Promise<Response> {
-  const { content, contentType } = generateFeed(await getItems(), 'rss');
+  const { content, contentType } = generateFeed(await getItems(), "rss");
   return new Response(content, {
-    headers: { "Content-Type": contentType }
+    headers: { "Content-Type": contentType },
   });
 }
 
@@ -25,9 +25,9 @@ export async function handleRss(): Promise<Response> {
  * Handle Atom format request
  */
 export async function handleAtom(): Promise<Response> {
-  const { content, contentType } = generateFeed(await getItems(), 'atom');
+  const { content, contentType } = generateFeed(await getItems(), "atom");
   return new Response(content, {
-    headers: { "Content-Type": contentType }
+    headers: { "Content-Type": contentType },
   });
 }
 
@@ -35,9 +35,9 @@ export async function handleAtom(): Promise<Response> {
  * Handle JSON Feed format request (includes HTML)
  */
 export async function handleJsonFeed(): Promise<Response> {
-  const { content, contentType } = generateFeed(await getItems(), 'json');
+  const { content, contentType } = generateFeed(await getItems(), "json");
   return new Response(content, {
-    headers: { "Content-Type": contentType }
+    headers: { "Content-Type": contentType },
   });
 }
 
@@ -45,9 +45,9 @@ export async function handleJsonFeed(): Promise<Response> {
  * Handle Raw JSON format request
  */
 export async function handleRawJson(): Promise<Response> {
-  const { content, contentType } = generateFeed(await getItems(), 'raw');
+  const { content, contentType } = generateFeed(await getItems(), "raw");
   return new Response(content, {
-    headers: { "Content-Type": contentType }
+    headers: { "Content-Type": contentType },
   });
 }
 
@@ -55,18 +55,22 @@ export async function handleRawJson(): Promise<Response> {
  * Get all items with format options
  */
 export async function handleGetItems(c: Context): Promise<Response> {
-  const format = c.req.query('format') as ApiFormat || 'raw';
+  const format = (c.req.query("format") as ApiFormat) || "raw";
   const items = await getItems();
 
-  if (format === 'raw' || format === 'html') {
+  if (format === "raw" || format === "html") {
     const formattedItems = formatItems(items, format);
     return c.json(formattedItems);
   } else {
     // Invalid format
-    return c.json({
-      error: `Invalid format: ${format}. Valid formats are: raw, html`,
-      message: "Format determines how item content is returned: raw (HTML stripped) or html (HTML preserved)"
-    }, 400);
+    return c.json(
+      {
+        error: `Invalid format: ${format}. Valid formats are: raw, html`,
+        message:
+          "Format determines how item content is returned: raw (HTML stripped) or html (HTML preserved)",
+      },
+      400,
+    );
   }
 }
 
@@ -80,17 +84,23 @@ export async function handleAddItem(c: Context): Promise<Response> {
 
   // Validate required fields
   if (!item.content) {
-    return c.json({
-      error: "Missing required field: content",
-      message: "The content field is required for RSS items"
-    }, 400);
+    return c.json(
+      {
+        error: "Missing required field: content",
+        message: "The content field is required for RSS items",
+      },
+      400,
+    );
   }
 
   if (!item.link) {
-    return c.json({
-      error: "Missing required field: link",
-      message: "The link field is required for RSS items"
-    }, 400);
+    return c.json(
+      {
+        error: "Missing required field: link",
+        message: "The link field is required for RSS items",
+      },
+      400,
+    );
   }
 
   // Ensure required fields have values
@@ -104,7 +114,7 @@ export async function handleAddItem(c: Context): Promise<Response> {
     content: sanitize(item.content),
 
     published: item.published ? new Date(item.published) : new Date(),
-    date: item.date ? new Date(item.date) : new Date()
+    date: item.date ? new Date(item.date) : new Date(),
   };
 
   // Add item to feed's items list
@@ -112,6 +122,6 @@ export async function handleAddItem(c: Context): Promise<Response> {
 
   return c.json({
     message: "Item added successfully",
-    item: completeItem
+    item: completeItem,
   });
 }

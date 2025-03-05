@@ -132,18 +132,19 @@ const DEFAULT_CONFIG = {
     {
       plugin: "@curatedotfun/ai-transform",
       config: {
-        prompt: "Transform this into an engaging news article with a title and content.",
+        prompt:
+          "Transform this into an engaging news article with a title and content.",
         apiKey: "{OPENROUTER_API_KEY}",
         schema: {
           title: {
             type: "string",
-            description: "Engaging title for the article"
+            description: "Engaging title for the article",
           },
           content: {
             type: "string",
-            description: "Article content in HTML format"
-          }
-        }
+            description: "Article content in HTML format",
+          },
+        },
       },
     },
     {
@@ -154,8 +155,8 @@ const DEFAULT_CONFIG = {
           content: "{{content}}",
           link: "https://example.com/posts/{{id}}",
           publishedAt: "{{timestamp}}",
-          guid: "post-{{id}}"
-        }
+          guid: "post-{{id}}",
+        },
       },
     },
     {

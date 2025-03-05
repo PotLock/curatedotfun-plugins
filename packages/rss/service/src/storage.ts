@@ -6,93 +6,111 @@ let redis: any;
 
 // Determine which Redis client to use
 const initializeRedis = async () => {
-  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  if (
+    process.env.UPSTASH_REDIS_REST_URL &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  ) {
     // Use Upstash Redis in production
     const { Redis } = await import("@upstash/redis");
     return new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL,
       token: process.env.UPSTASH_REDIS_REST_TOKEN,
     });
-  } else if (process.env.USE_REDIS_MOCK === 'true') {
+  } else if (process.env.USE_REDIS_MOCK === "true") {
     console.log("Using in-memory Redis mock");
-    
+
     // In-memory storage for mock Redis
     const inMemoryStorage: Record<string, any> = {};
-    
+
     // Enhanced mock implementation with debugging
     const mockRedis = {
       async lrange(key: string, start: number, end: number) {
         console.log(`[MOCK REDIS] lrange: ${key}, ${start}, ${end}`);
         if (!inMemoryStorage[key]) {
-          console.log(`[MOCK REDIS] Key not found: ${key}, returning empty array`);
+          console.log(
+            `[MOCK REDIS] Key not found: ${key}, returning empty array`,
+          );
           return [];
         }
-        const result = inMemoryStorage[key].slice(start, end === -1 ? undefined : end + 1);
+        const result = inMemoryStorage[key].slice(
+          start,
+          end === -1 ? undefined : end + 1,
+        );
         console.log(`[MOCK REDIS] lrange result: ${result.length} items`);
         return result;
       },
-      
+
       async lpush(key: string, value: string) {
         console.log(`[MOCK REDIS] lpush: ${key}, ${value.substring(0, 50)}...`);
         if (!inMemoryStorage[key]) {
           inMemoryStorage[key] = [];
         }
         inMemoryStorage[key].unshift(value);
-        console.log(`[MOCK REDIS] New length after lpush: ${inMemoryStorage[key].length}`);
+        console.log(
+          `[MOCK REDIS] New length after lpush: ${inMemoryStorage[key].length}`,
+        );
         return inMemoryStorage[key].length;
       },
-      
+
       async ltrim(key: string, start: number, end: number) {
         console.log(`[MOCK REDIS] ltrim: ${key}, ${start}, ${end}`);
         if (!inMemoryStorage[key]) {
-          return 'OK';
+          return "OK";
         }
-        
+
         // Handle NaN or invalid end values
         let endIndex = end;
         if (isNaN(endIndex) || endIndex < 0) {
-          console.log(`[MOCK REDIS] Invalid end index: ${end}, using -1 (keep all items)`);
+          console.log(
+            `[MOCK REDIS] Invalid end index: ${end}, using -1 (keep all items)`,
+          );
           endIndex = -1;
         }
-        
+
         inMemoryStorage[key] = inMemoryStorage[key].slice(
-          start, 
-          endIndex === -1 ? undefined : endIndex + 1
+          start,
+          endIndex === -1 ? undefined : endIndex + 1,
         );
-        
-        console.log(`[MOCK REDIS] New length after ltrim: ${inMemoryStorage[key].length}`);
-        return 'OK';
+
+        console.log(
+          `[MOCK REDIS] New length after ltrim: ${inMemoryStorage[key].length}`,
+        );
+        return "OK";
       },
-      
+
       async exists(key: string) {
         console.log(`[MOCK REDIS] exists: ${key}`);
         const exists = !!inMemoryStorage[key];
         console.log(`[MOCK REDIS] Key ${key} exists: ${exists}`);
         return exists ? 1 : 0;
       },
-      
+
       async set(key: string, value: string) {
         console.log(`[MOCK REDIS] set: ${key}, ${value.substring(0, 50)}...`);
         inMemoryStorage[key] = value;
-        return 'OK';
+        return "OK";
       },
-      
+
       // Helper method to inspect the current state (not part of Redis API)
       getStorageState() {
-        return Object.keys(inMemoryStorage).reduce((acc, key) => {
-          if (Array.isArray(inMemoryStorage[key])) {
-            // For arrays, return the actual array contents
-            acc[key] = inMemoryStorage[key];
-          } else {
-            acc[key] = typeof inMemoryStorage[key] === 'string' 
-              ? inMemoryStorage[key]
-              : inMemoryStorage[key];
-          }
-          return acc;
-        }, {} as Record<string, any>);
-      }
+        return Object.keys(inMemoryStorage).reduce(
+          (acc, key) => {
+            if (Array.isArray(inMemoryStorage[key])) {
+              // For arrays, return the actual array contents
+              acc[key] = inMemoryStorage[key];
+            } else {
+              acc[key] =
+                typeof inMemoryStorage[key] === "string"
+                  ? inMemoryStorage[key]
+                  : inMemoryStorage[key];
+            }
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
+      },
     };
-    
+
     return mockRedis;
   } else {
     // Use IoRedis for Docker environment
@@ -110,7 +128,7 @@ const initializeRedis = async () => {
       },
       async ltrim(key: string, start: number, end: number) {
         console.log(`Mock ltrim: ${key}, ${start}, ${end}`);
-        return 'OK';
+        return "OK";
       },
       async exists(key: string) {
         console.log(`Mock exists: ${key}`);
@@ -118,8 +136,8 @@ const initializeRedis = async () => {
       },
       async set(key: string, value: string) {
         console.log(`Mock set: ${key}, ${value}`);
-        return 'OK';
-      }
+        return "OK";
+      },
     };
   }
 };
@@ -135,26 +153,24 @@ export { redis };
  */
 export async function getItems(): Promise<string[]> {
   const itemsKey = `feed:${DEFAULT_FEED_ID}:items`;
-  
+
   // Log the current storage state when in development mode
-  if (process.env.USE_REDIS_MOCK === 'true' && redis.getStorageState) {
-    console.log('[MOCK REDIS] Current storage state:');
+  if (process.env.USE_REDIS_MOCK === "true" && redis.getStorageState) {
+    console.log("[MOCK REDIS] Current storage state:");
     const storageState = redis.getStorageState();
     console.log(JSON.stringify(storageState, null, 2));
-    
+
     // If we have items in the storage, return them directly
     if (storageState[itemsKey] && Array.isArray(storageState[itemsKey])) {
-      console.log(`[MOCK REDIS] Returning ${storageState[itemsKey].length} items directly from storage`);
+      console.log(
+        `[MOCK REDIS] Returning ${storageState[itemsKey].length} items directly from storage`,
+      );
       return storageState[itemsKey];
     }
   }
-  
+
   // If not using mock or no items in storage, use standard Redis API
-  return await redis.lrange(
-    itemsKey,
-    0,
-    feedConfig.maxItems - 1
-  );
+  return await redis.lrange(itemsKey, 0, feedConfig.maxItems - 1);
 }
 
 /**
@@ -169,7 +185,7 @@ export async function addItem(item: RssItem): Promise<void> {
   await redis.ltrim(
     `feed:${DEFAULT_FEED_ID}:items`,
     0,
-    feedConfig.maxItems - 1
+    feedConfig.maxItems - 1,
   );
 }
 
@@ -180,8 +196,11 @@ export async function initializeFeed(): Promise<void> {
   const exists = await redis.exists(`feed:${DEFAULT_FEED_ID}`);
   if (!exists) {
     console.log(`Initializing feed: ${DEFAULT_FEED_ID}`);
-    await redis.set(`feed:${DEFAULT_FEED_ID}`, JSON.stringify({
-      feedConfig
-    }));
+    await redis.set(
+      `feed:${DEFAULT_FEED_ID}`,
+      JSON.stringify({
+        feedConfig,
+      }),
+    );
   }
 }

@@ -1,18 +1,15 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { 
-  validateEnv, 
-  ALLOWED_ORIGINS 
-} from "./config.js";
-import { 
-  handleRoot, 
-  handleRss, 
-  handleAtom, 
-  handleJsonFeed, 
-  handleRawJson, 
-  handleGetItems, 
-  handleAddItem 
+import { validateEnv, ALLOWED_ORIGINS } from "./config.js";
+import {
+  handleRoot,
+  handleRss,
+  handleAtom,
+  handleJsonFeed,
+  handleRawJson,
+  handleGetItems,
+  handleAddItem,
 } from "./routes.js";
 import { authenticate } from "./middleware.js";
 import { initializeFeed } from "./storage.js";
@@ -24,16 +21,19 @@ validateEnv();
 const app = new Hono();
 
 // Configure CORS with specific origins if provided
-app.use("*", cors({
-  origin: ALLOWED_ORIGINS.includes('*') ? '*' : ALLOWED_ORIGINS,
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Authorization', 'Content-Type'],
-  exposeHeaders: ['Content-Length', 'X-RSS-Service-Version'],
-  maxAge: 86400,
-}));
+app.use(
+  "*",
+  cors({
+    origin: ALLOWED_ORIGINS.includes("*") ? "*" : ALLOWED_ORIGINS,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Authorization", "Content-Type"],
+    exposeHeaders: ["Content-Length", "X-RSS-Service-Version"],
+    maxAge: 86400,
+  }),
+);
 
 // Apply authentication middleware
-app.use('*', authenticate);
+app.use("*", authenticate);
 
 // Register routes
 app.get("/", handleRoot);
@@ -48,7 +48,7 @@ app.post("/api/items", handleAddItem);
 async function startServer() {
   // Initialize feed
   await initializeFeed();
-  
+
   // Start server if not in production (Vercel will handle this in prod)
   if (process.env.NODE_ENV !== "production") {
     const port = process.env.PORT ? parseInt(process.env.PORT) : 4001;

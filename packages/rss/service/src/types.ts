@@ -1,8 +1,8 @@
 import { FeedOptions, Item } from "feed/lib/typings/index.js";
 
 // Format types supported by the service
-export type FeedFormat = 'rss' | 'atom' | 'json' | 'raw';
-export type ApiFormat = 'raw' | 'html';
+export type FeedFormat = "rss" | "atom" | "json" | "raw";
+export type ApiFormat = "raw" | "html";
 
 // Use the Item interface directly from the feed package
 export type RssItem = Item;

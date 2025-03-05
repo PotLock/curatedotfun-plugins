@@ -1,8 +1,4 @@
-
-import type {
-  ActionArgs,
-  DistributorPlugin,
-} from "@curatedotfun/types";
+import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
 import { Category, Enclosure } from "feed/lib/typings/index.js";
 import { z } from "zod";
 import { RssItem } from "../service/src/types";
@@ -19,54 +15,89 @@ const RssItemSchema = z.object({
   guid: z.string().optional(), // Unique identifier
 
   // Author information
-  author: z.object({
-    name: z.string(),
-    email: z.string().optional(),
-    link: z.string().optional()
-  }).optional().or(z.array(z.object({
-    name: z.string(),
-    email: z.string().optional(),
-    link: z.string().optional()
-  }))), // Author(s) information
+  author: z
+    .object({
+      name: z.string(),
+      email: z.string().optional(),
+      link: z.string().optional(),
+    })
+    .optional()
+    .or(
+      z.array(
+        z.object({
+          name: z.string(),
+          email: z.string().optional(),
+          link: z.string().optional(),
+        }),
+      ),
+    ), // Author(s) information
 
   // Media and categorization
-  image: z.string().optional().or(z.object({
-    url: z.string(),
-    type: z.string().optional(),
-    length: z.number().optional(),
-  })), // Image URL or enclosure
-  audio: z.string().optional().or(z.object({
-    url: z.string(),
-    type: z.string().optional(),
-    length: z.number().optional(),
-  })), // Audio URL or enclosure
-  video: z.string().optional().or(z.object({
-    url: z.string(),
-    type: z.string().optional(),
-    length: z.number().optional(),
-  })), // Video URL or enclosure
-  enclosure: z.object({
-    url: z.string(),
-    type: z.string().optional(),
-    length: z.number().optional(),
-  }).optional(), // Generic enclosure
-  categories: z.array(z.string()).optional().or(z.array(z.object({
-    name: z.string(),
-    domain: z.string().optional()
-  }))), // Categories/tags
+  image: z
+    .string()
+    .optional()
+    .or(
+      z.object({
+        url: z.string(),
+        type: z.string().optional(),
+        length: z.number().optional(),
+      }),
+    ), // Image URL or enclosure
+  audio: z
+    .string()
+    .optional()
+    .or(
+      z.object({
+        url: z.string(),
+        type: z.string().optional(),
+        length: z.number().optional(),
+      }),
+    ), // Audio URL or enclosure
+  video: z
+    .string()
+    .optional()
+    .or(
+      z.object({
+        url: z.string(),
+        type: z.string().optional(),
+        length: z.number().optional(),
+      }),
+    ), // Video URL or enclosure
+  enclosure: z
+    .object({
+      url: z.string(),
+      type: z.string().optional(),
+      length: z.number().optional(),
+    })
+    .optional(), // Generic enclosure
+  categories: z
+    .array(z.string())
+    .optional()
+    .or(
+      z.array(
+        z.object({
+          name: z.string(),
+          domain: z.string().optional(),
+        }),
+      ),
+    ), // Categories/tags
 
   // Additional metadata
   copyright: z.string().optional(), // Copyright information
-  source: z.object({
-    url: z.string(),
-    title: z.string()
-  }).optional(), // Source information
-  isPermaLink: z.boolean().optional() // Whether guid is a permalink
+  source: z
+    .object({
+      url: z.string(),
+      title: z.string(),
+    })
+    .optional(), // Source information
+  isPermaLink: z.boolean().optional(), // Whether guid is a permalink
 });
 
 type RssInput = z.infer<typeof RssItemSchema>;
 
-export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig> {
+export default class RssPlugin
+  implements DistributorPlugin<RssInput, RssConfig>
+{
   readonly type = "distributor" as const;
 
   // Essential service properties
@@ -95,23 +126,23 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
     // Check if service is running with a health check
     try {
       const healthCheckResponse = await fetch(`${this.serviceUrl}/`, {
-        method: 'GET'
+        method: "GET",
       });
 
       if (!healthCheckResponse.ok) {
-        console.warn(`Warning: RSS service health check returned status ${healthCheckResponse.status}`);
+        console.warn(
+          `Warning: RSS service health check returned status ${healthCheckResponse.status}`,
+        );
       } else {
-        console.log('RSS service is running');
+        console.log("RSS service is running");
       }
     } catch (error) {
-      console.error('Error checking RSS service:', error);
+      console.error("Error checking RSS service:", error);
       throw new Error(`Failed to initialize RSS feed: ${error}`);
     }
   }
 
-  async distribute({
-    input,
-  }: ActionArgs<RssInput, RssConfig>): Promise<void> {
+  async distribute({ input }: ActionArgs<RssInput, RssConfig>): Promise<void> {
     try {
       // Validate input
       const validatedInput = RssItemSchema.parse(input);
@@ -119,8 +150,8 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
       // Create a complete RssItem with defaults for missing fields
       const item: RssItem = {
         // Required fields - ensure we have values for these
-        content: validatedInput.content || validatedInput.description || '',
-        link: validatedInput.link || '',
+        content: validatedInput.content || validatedInput.description || "",
+        link: validatedInput.link || "",
         guid: validatedInput.guid || validatedInput.link || String(Date.now()), // Use link as fallback or timestamp
         // Ensure dates are in UTC
         published: validatedInput.publishedAt
@@ -129,47 +160,60 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
         date: new Date(), // Current date
 
         // Title is required in the Item interface
-        title: validatedInput.title || 'Untitled',
+        title: validatedInput.title || "Untitled",
 
         // Handle author(s)
         ...(validatedInput.author && {
           author: Array.isArray(validatedInput.author)
             ? validatedInput.author
-            : [validatedInput.author]
+            : [validatedInput.author],
         }),
 
         // Handle categories
         ...(validatedInput.categories && {
           category: Array.isArray(validatedInput.categories)
-            ? (typeof validatedInput.categories[0] === 'string'
-              ? validatedInput.categories.map(cat => ({ name: cat as string } as Category))
-              : validatedInput.categories as Category[])
-            : [{ name: validatedInput.categories as unknown as string } as Category]
+            ? typeof validatedInput.categories[0] === "string"
+              ? validatedInput.categories.map(
+                  (cat) => ({ name: cat as string }) as Category,
+                )
+              : (validatedInput.categories as Category[])
+            : [
+                {
+                  name: validatedInput.categories as unknown as string,
+                } as Category,
+              ],
         }),
 
         // Handle media enclosures
         ...(validatedInput.image && {
-          image: typeof validatedInput.image === 'string'
-            ? validatedInput.image
-            : validatedInput.image as Enclosure
+          image:
+            typeof validatedInput.image === "string"
+              ? validatedInput.image
+              : (validatedInput.image as Enclosure),
         }),
 
         ...(validatedInput.audio && {
-          audio: typeof validatedInput.audio === 'string'
-            ? validatedInput.audio
-            : validatedInput.audio as Enclosure
+          audio:
+            typeof validatedInput.audio === "string"
+              ? validatedInput.audio
+              : (validatedInput.audio as Enclosure),
         }),
 
         ...(validatedInput.video && {
-          video: typeof validatedInput.video === 'string'
-            ? validatedInput.video
-            : validatedInput.video as Enclosure
+          video:
+            typeof validatedInput.video === "string"
+              ? validatedInput.video
+              : (validatedInput.video as Enclosure),
         }),
 
         // Additional metadata
-        ...(validatedInput.enclosure && { enclosure: validatedInput.enclosure as Enclosure }),
+        ...(validatedInput.enclosure && {
+          enclosure: validatedInput.enclosure as Enclosure,
+        }),
         ...(validatedInput.source && { source: validatedInput.source }),
-        ...(validatedInput.isPermaLink !== undefined && { isPermaLink: validatedInput.isPermaLink })
+        ...(validatedInput.isPermaLink !== undefined && {
+          isPermaLink: validatedInput.isPermaLink,
+        }),
       };
 
       // Save to RSS service
@@ -187,27 +231,31 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
    */
   private async saveItem(item: RssItem): Promise<void> {
     if (!this.serviceUrl) {
-      throw new Error('RSS service URL is required');
+      throw new Error("RSS service URL is required");
     }
 
     console.log("saving item", item);
 
     try {
       const response = await fetch(`${this.serviceUrl}/api/items`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          ...(this.apiSecret ? { 'Authorization': `Bearer ${this.apiSecret}` } : {})
+          "Content-Type": "application/json",
+          ...(this.apiSecret
+            ? { Authorization: `Bearer ${this.apiSecret}` }
+            : {}),
         },
-        body: JSON.stringify(item)
+        body: JSON.stringify(item),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(`Failed to save item to RSS service: ${errorData.error || response.statusText}`);
+        throw new Error(
+          `Failed to save item to RSS service: ${errorData.error || response.statusText}`,
+        );
       }
     } catch (error) {
-      console.error('Error saving item to RSS service:', error);
+      console.error("Error saving item to RSS service:", error);
       throw error;
     }
   }
