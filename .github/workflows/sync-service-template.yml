@@ -73,8 +73,23 @@ jobs:
           # Remove existing contents but preserve .git
           rm -rf target_repo/*
           
-          # Copy new contents
-          cp -r ${{ inputs.source_path }}/* target_repo/
+          # Copy new contents (including hidden files)
+          shopt -s dotglob nullglob
+          cp -r ${{ inputs.source_path }}/* target_repo/ 2>/dev/null || true
+          
+          # Explicitly copy any dotfiles to ensure they're included
+          if [ -f "${{ inputs.source_path }}/.gitignore" ]; then
+            cp ${{ inputs.source_path }}/.gitignore target_repo/
+            echo "✅ .gitignore copied"
+          fi
+          
+          # Ensure .git directory is preserved in target repo
+          if [ -d "target_repo/.git" ]; then
+            echo "✅ .git directory preserved"
+          else
+            echo "❌ .git directory missing - something went wrong"
+            exit 1
+          fi
           
           # Commit and push changes
           cd target_repo
