@@ -116,16 +116,16 @@ const initializeRedis = async () => {
   } else {
     // Use IoRedis for Docker environment
     console.log("Using IoRedis with Docker");
-    const { default: Redis } = await import('ioredis');
+    const { default: Redis } = await import("ioredis");
     // @ts-ignore
     return new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
+      host: process.env.REDIS_HOST || "localhost",
+      port: parseInt(process.env.REDIS_PORT || "6379"),
       maxRetriesPerRequest: 3,
       retryStrategy(times) {
         const delay = Math.min(times * 50, 2000);
         return delay;
-      }
+      },
     });
   }
 };

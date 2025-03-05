@@ -7,7 +7,10 @@ import { FeedConfig } from "./types.js";
 const REQUIRED_ENV_VARS = ["API_SECRET"];
 
 // Redis-specific environment variables
-const UPSTASH_REDIS_ENV_VARS = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"];
+const UPSTASH_REDIS_ENV_VARS = [
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+];
 
 // Validate required environment variables
 export function validateEnv(): void {
@@ -20,9 +23,14 @@ export function validateEnv(): void {
   });
 
   // Check Redis configuration when not using mock or in Docker env
-  if (process.env.CONTAINER_RUNTIME !== "true" && process.env.USE_REDIS_MOCK !== "true") {
+  if (
+    process.env.CONTAINER_RUNTIME !== "true" &&
+    process.env.USE_REDIS_MOCK !== "true"
+  ) {
     // Check if we have either Upstash or local Redis configuration
-    const hasUpstashConfig = UPSTASH_REDIS_ENV_VARS.every(varName => process.env[varName]);
+    const hasUpstashConfig = UPSTASH_REDIS_ENV_VARS.every(
+      (varName) => process.env[varName],
+    );
 
     if (!hasUpstashConfig) {
       console.error(
