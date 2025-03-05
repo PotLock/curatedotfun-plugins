@@ -13,9 +13,9 @@ export const redis = new Redis({
  */
 export async function getItems(): Promise<string[]> {
   return await redis.lrange(
-    `feed:${DEFAULT_FEED_ID}:items`, 
-    0, 
-    feedConfig.feed.maxItems - 1
+    `feed:${DEFAULT_FEED_ID}:items`,
+    0,
+    feedConfig.maxItems - 1
   );
 }
 
@@ -25,12 +25,12 @@ export async function getItems(): Promise<string[]> {
 export async function addItem(item: RssItem): Promise<void> {
   // Add item to feed's items list
   await redis.lpush(`feed:${DEFAULT_FEED_ID}:items`, JSON.stringify(item));
-  
+
   // Trim to max items
   await redis.ltrim(
-    `feed:${DEFAULT_FEED_ID}:items`, 
-    0, 
-    feedConfig.feed.maxItems - 1
+    `feed:${DEFAULT_FEED_ID}:items`,
+    0,
+    feedConfig.maxItems - 1
   );
 }
 
@@ -42,8 +42,7 @@ export async function initializeFeed(): Promise<void> {
   if (!exists) {
     console.log(`Initializing feed: ${DEFAULT_FEED_ID}`);
     await redis.set(`feed:${DEFAULT_FEED_ID}`, JSON.stringify({
-      id: DEFAULT_FEED_ID,
-      ...feedConfig.feed
+      feedConfig
     }));
   }
 }

@@ -23,8 +23,8 @@ export function validateEnv(): void {
 export const API_SECRET = process.env.API_SECRET!;
 
 // Optional allowed origins for CORS (comma-separated list)
-export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
+export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
   : ['*'];
 
 // Default feed ID - since we're focusing on a single feed
@@ -32,20 +32,19 @@ export const DEFAULT_FEED_ID = "main";
 
 // Default configuration
 const DEFAULT_CONFIG: FeedConfig = {
-  feed: {
-    title: "Default RSS Feed",
-    description: "A feed of curated content",
-    siteUrl: "https://example.com",
-    language: "en",
-    maxItems: 100,
-    preferredFormat: "rss"
-  }
+  id: DEFAULT_FEED_ID,
+  title: "Default RSS Feed",
+  description: "A feed of curated content",
+  siteUrl: "https://example.com",
+  copyright: "test",
+  language: "en",
+  maxItems: 100,
 };
 
 // Load feed configuration from JSON file
 export function loadConfig(): FeedConfig {
   const CONFIG_FILE_PATH = path.join(process.cwd(), 'feed-config.json');
-  
+
   try {
     const configFile = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
     const config = JSON.parse(configFile) as FeedConfig;

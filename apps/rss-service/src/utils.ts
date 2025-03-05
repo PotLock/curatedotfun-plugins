@@ -10,7 +10,7 @@ export function stripHtml(html: string): string {
 /**
  * Sanitize HTML content to prevent XSS attacks
  */
-export function sanitizeContent(content: string): string {
+export function sanitize(content: string): string {
   return sanitizeHtml(content, {
     allowedTags: [
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
