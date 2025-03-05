@@ -59,7 +59,10 @@ app.post("/api/items", handleAddItem);
 await initializeFeed();
 
 // For local development and container-based deployments (e.g. Railway via Docker)
-if (process.env.NODE_ENV !== "production" || process.env.CONTAINER_RUNTIME === "true") {
+if (
+  process.env.NODE_ENV !== "production" ||
+  process.env.CONTAINER_RUNTIME === "true"
+) {
   const DEFAULT_PORT = 4001;
   const port = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT;
   serve({
