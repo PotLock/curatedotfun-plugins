@@ -1,0 +1,83 @@
+name: Sync Service Directory
+on:
+  workflow_call:
+    inputs:
+      source_path:
+        description: 'Path to the source directory to sync'
+        required: true
+        type: string
+      target_repo:
+        description: 'Name of the target repository (e.g. org/repo)'
+        required: true
+        type: string
+      target_branch:
+        description: 'Branch to push to in the target repository'
+        required: false
+        type: string
+        default: 'main'
+    secrets:
+      deploy_token:
+        description: 'SSH deploy key for target repository'
+        required: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Validate inputs
+        run: |
+          if [ ! -d "${{ inputs.source_path }}" ]; then
+            echo "❌ Source path ${{ inputs.source_path }} does not exist"
+            exit 1
+          fi
+          echo "✅ Source path validated"
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          echo "✅ Git configured"
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.deploy_token }}
+
+      - name: Clone target repository
+        run: |
+          # Clone the deployment repo using SSH with the installed key
+          git clone git@github.com:${{ inputs.target_repo }}.git target_repo
+          echo "✅ Repository cloned"
+          
+          # Ensure target branch exists
+          cd target_repo
+          if ! git ls-remote --heads origin ${{ inputs.target_branch }} | grep ${{ inputs.target_branch }} > /dev/null; then
+            echo "🌱 Creating target branch ${{ inputs.target_branch }}"
+            git checkout --orphan ${{ inputs.target_branch }}
+            git rm -rf .
+            git commit --allow-empty -m "Initialize branch"
+            git push origin ${{ inputs.target_branch }}
+          fi
+          git checkout ${{ inputs.target_branch }}
+          echo "✅ Branch checked out"
+          cd ..
+
+      - name: Sync directory contents
+        run: |
+          echo "🔄 Syncing directory contents"
+          
+          # Remove existing contents but preserve .git
+          rm -rf target_repo/*
+          
+          # Copy new contents
+          cp -r ${{ inputs.source_path }}/* target_repo/
+          
+          # Commit and push changes
+          cd target_repo
+          git add .
+          git commit -m "Sync from main repo" || echo "No changes to commit"
+          git push origin ${{ inputs.target_branch }}
