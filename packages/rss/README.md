@@ -4,14 +4,17 @@ sidebar_position: 6
 
 # 📰 RSS Plugin
 
-The RSS plugin enables distribution of curated content to RSS feeds, allowing you to publish content to your own RSS feed that can be consumed by RSS readers and other applications.
+The RSS plugin enables distribution of curated content to RSS feeds, allowing you to publish content to your own RSS feed that can be consumed by RSS readers and other applications. This extends the reach of your curated content beyond the curate.fun platform itself.
 
 ## 🚀 Features
 
 - **Multiple Feed Formats**: Generate RSS 2.0, Atom, and JSON Feed formats
-- **Standard-Compliant URLs**: Access feeds via standard paths (`/rss.xml`, `/atom.xml`, `/feed.json`) or api route `/api/items`
+- **Standard-Compliant URLs**: Access feeds via standard paths (`/rss.xml`, `/atom.xml`, `/feed.json`) or API route `/api/items`
+- **Raw Data Option**: Get content without HTML via `/raw.json` for frontend customization
+- **HTML Sanitization**: Secure content handling with sanitize-html
 - **Flexible Deployment**: Deploy the RSS service to various platforms (Vercel, Netlify, Heroku, Cloudflare)
 - **Secure Authentication**: Simple API secret authentication for feed management
+- **Redis Storage**: Efficient storage with Upstash Redis (production) or Redis mock (development)
 
 ## 🔧 Setup Guide
 
@@ -82,19 +85,53 @@ The plugin validates input using Zod and expects an object with these fields (co
 
 ```typescript
 interface RssInput {
-  title?: string;
-  content: string; // Required
-  link: string;    // Required
-  publishedAt?: string; // Default: new Date().toISOString()
-  guid?: string;        // Default: `item-${Date.now()}`
-  author?: string;
-  categories?: string[];
-  comments?: string;
+  // Core fields
+  title?: string;                // Optional custom title
+  content: string;               // Required - Content of the item
+  description?: string;          // Optional description/summary
+  link: string;                  // Required - URL to the item
+  publishedAt?: string;          // Default: new Date().toISOString()
+  guid?: string;                 // Default: `item-${Date.now()}`
+  
+  // Author information
+  author?: {
+    name: string;
+    email?: string;
+    link?: string;
+  } | Array<{
+    name: string;
+    email?: string;
+    link?: string;
+  }>;
+  
+  // Media and categorization
+  image?: string | {
+    url: string;
+    type?: string;
+    length?: number;
+  };
+  audio?: string | {
+    url: string;
+    type?: string;
+    length?: number;
+  };
+  video?: string | {
+    url: string;
+    type?: string;
+    length?: number;
+  };
   enclosure?: {
     url: string;
-    length: number;
-    type: string;
+    type?: string;
+    length?: number;
   };
+  categories?: string[] | Array<{
+    name: string;
+    domain?: string;
+  }>;
+  
+  // Additional metadata
+  copyright?: string;
   source?: {
     url: string;
     title: string;
@@ -102,6 +139,8 @@ interface RssInput {
   isPermaLink?: boolean;
 }
 ```
+
+The plugin handles various formats for fields like `author`, `image`, `audio`, `video`, and `categories`, allowing for both simple string values and more complex objects with additional metadata.
 
 ### Using Transformer Plugins
 
@@ -269,7 +308,8 @@ Once your RSS service is deployed and the plugin is configured, your RSS feed wi
 ```txt
 https://your-rss-service-url.com/rss.xml   # RSS 2.0 format
 https://your-rss-service-url.com/atom.xml  # Atom format
-https://your-rss-service-url.com/feed.json # JSON Feed format
+https://your-rss-service-url.com/feed.json # JSON Feed format (HTML)
+https://your-rss-service-url.com/raw.json  # Raw JSON format (No HTML)
 ```
 
 You can share these URLs with users who want to subscribe to your feed using their favorite RSS reader.

@@ -10,18 +10,28 @@ export function formatItems(items: string[], format: ApiFormat = 'raw'): Item[] 
   if (format === 'raw') {
     // Return items with HTML content stripped
     return items.map(itemJson => {
-      const item = JSON.parse(itemJson) as RssItem;
-      return {
-        ...item,
-        title: stripHtml(item.title),
-        description: stripHtml(item.description || ""),
-        content: stripHtml(item.content!),
+      const parsedItem = JSON.parse(itemJson);
+      // Ensure date fields are Date objects
+      const item: RssItem = {
+        ...parsedItem,
+        date: parsedItem.date ? new Date(parsedItem.date) : new Date(),
+        published: parsedItem.published ? new Date(parsedItem.published) : undefined,
+        title: stripHtml(parsedItem.title),
+        description: stripHtml(parsedItem.description || ""),
+        content: stripHtml(parsedItem.content!),
       };
+      return item;
     });
   } else { // format === 'html'
     // Return items with HTML content preserved
     return items.map(itemJson => {
-      const item = JSON.parse(itemJson) as RssItem;
+      const parsedItem = JSON.parse(itemJson);
+      // Ensure date fields are Date objects
+      const item: RssItem = {
+        ...parsedItem,
+        date: parsedItem.date ? new Date(parsedItem.date) : new Date(),
+        published: parsedItem.published ? new Date(parsedItem.published) : undefined
+      };
       return item;
     });
   }
@@ -38,8 +48,7 @@ export function generateFeed(items: string[], format: FeedFormat = 'rss'): { con
 
     const jsonFeed = {
       version: "https://jsonfeed.org/version/1.1",
-      ...feedConfig,
-      link: `${feedConfig.siteUrl}/raw.json`,
+      feed_url: `${feedConfig.siteUrl}/raw.json`,
       items: rawItems
     };
 
@@ -70,7 +79,13 @@ export function generateFeed(items: string[], format: FeedFormat = 'rss'): { con
 
   // Add items to the feed
   items.forEach((itemJson: string) => {
-    const item = JSON.parse(itemJson) as RssItem;
+    const parsedItem = JSON.parse(itemJson);
+    // Ensure date fields are Date objects
+    const item: RssItem = {
+      ...parsedItem,
+      date: parsedItem.date ? new Date(parsedItem.date) : new Date(),
+      published: parsedItem.published ? new Date(parsedItem.published) : undefined
+    };
     feed.addItem(item);
   });
 

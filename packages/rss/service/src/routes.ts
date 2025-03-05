@@ -103,8 +103,8 @@ export async function handleAddItem(c: Context): Promise<Response> {
     description: sanitize(item.description || ""),
     content: sanitize(item.content),
 
-    published: item.published || new Date(),
-    date: item.date || new Date().toISOString()
+    published: item.published ? new Date(item.published) : new Date(),
+    date: item.date ? new Date(item.date) : new Date()
   };
 
   // Add item to feed's items list
