@@ -28,7 +28,7 @@ A lightweight, scalable RSS feed service built with Hono.js and Upstash Redis. T
 
 The RSS service uses a simple API secret for authentication. Protected endpoints require the API secret in the Authorization header:
 
-```
+```txt
 Authorization: Bearer <your-api-secret>
 ```
 
@@ -38,11 +38,12 @@ Public endpoints (health check and feed retrieval) do not require authentication
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | Yes |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token | Yes |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL | Yes (for production) |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token | Yes (for production) |
 | `API_SECRET` | Secret key for API authentication | Yes |
 | `ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS (default: '*') | No |
-| `PORT` | Port to run the server on (default: 3001) | No |
+| `PORT` | Port to run the server on (default: 4001) | No |
+| `USE_REDIS_MOCK` | Set to 'true' to use Redis mock for local development | No |
 
 ## Configuration
 
@@ -74,49 +75,108 @@ The RSS service can be configured using a `feed-config.json` file in the project
 
 ## Deployment Options
 
-### Vercel
+### Docker
 
-1. Clone this repository
-2. Create a new project in Vercel
-3. Link your repository
-4. Set the following settings:
+The easiest way to run the RSS service locally is using Docker with the provided Dockerfile and docker-compose.yml:
+
+1. Make sure you have Docker and Docker Compose installed on your system
+2. Navigate to the service directory
+3. Run the service with Docker Compose:
+
+   ```cmd
+   docker-compose up
+   ```
+
+4. The RSS service will be available at http://localhost:4001
+
+This setup includes:
+
+- A Redis container for data storage
+- The RSS service container configured to use the Redis container
+- Persistent volume for Redis data
+
+### Local Development (Without Docker)
+
+For local development without Docker, you can use the Redis mock:
+
+1. Navigate to the service directory
+2. Install dependencies:
+
+   ```cmd
+   npm install
+   ```
+
+3. Create a `.env` file with the following content:
+
+   ```cmd
+   API_SECRET=your-secure-random-string
+   USE_REDIS_MOCK=true
+   PORT=4001
+   ```
+
+4. Start the development server:
+
+   ```cmd
+   npm run dev
+   ```
+
+5. The RSS service will be available at <http://localhost:4001>
+
+### Production with Upstash Redis
+
+For production deployments, this service uses Upstash Redis for storing and retrieving RSS feed items. Follow these steps to set up Upstash Redis:
+
+1. Create an account at [Upstash](https://upstash.com/) if you don't have one
+2. Create a new Redis database:
+   - Go to the Upstash Console
+   - Click "Create Database"
+   - Choose a name for your database
+   - Select the region closest to your deployment
+   - Choose the appropriate plan (Free tier works for most use cases)
+   - Click "Create"
+3. Get your REST API credentials:
+   - In your database dashboard, click on the "REST API" tab
+   - Copy the `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+   - You'll need these values for your environment variables
+
+## Cloud Deployment Options
+
+### Vercel (Recommended with Upstash)
+
+Vercel and Upstash have a seamless integration, making this the recommended deployment option:
+
+1. Create a new project in Vercel
+2. Link your repository
+3. Configure the build settings:
    - Build Command: `npm run build`
    - Output Directory: `dist`
    - Install Command: `npm install`
-5. Add the required environment variables
-6. Deploy
+4. Add the required environment variables:
+   - `UPSTASH_REDIS_REST_URL`: Your Upstash Redis REST URL
+   - `UPSTASH_REDIS_REST_TOKEN`: Your Upstash Redis REST token
+   - `API_SECRET`: A secure random string for API authentication
+5. Optional: Use the Vercel Upstash Integration
+   - In your Vercel project, go to "Integrations"
+   - Find and add the Upstash integration
+   - This will automatically set up the Redis connection
+6. Deploy your project
 
 ### Netlify
 
-1. Clone this repository
-2. Create a new site in Netlify
-3. Link your repository
-4. Set the following settings:
+1. Create a new site in Netlify
+2. Link your repository
+3. Configure the build settings:
    - Build Command: `npm run build`
    - Publish Directory: `dist`
-5. Add the required environment variables
-6. Deploy
-
-### Heroku
-
-1. Clone this repository
-2. Create a new Heroku app
-3. Add the Heroku remote to your repository:
-   ```
-   heroku git:remote -a your-app-name
-   ```
-4. Set the required environment variables:
-   ```
-   heroku config:set UPSTASH_REDIS_REST_URL=your-redis-url
-   heroku config:set UPSTASH_REDIS_REST_TOKEN=your-redis-token
-   heroku config:set API_SECRET=your-api-secret
-   ```
-5. Deploy to Heroku:
-   ```
-   git push heroku main
-   ```
+4. Add the required environment variables in the Netlify dashboard:
+   - `UPSTASH_REDIS_REST_URL`: Your Upstash Redis REST URL
+   - `UPSTASH_REDIS_REST_TOKEN`: Your Upstash Redis REST token
+   - `API_SECRET`: A secure random string for API authentication
+5. Deploy your project
 
 ### Cloudflare Workers
+
+Cloudflare Workers can be used with Upstash Redis's REST API:
 
 1. Install Cloudflare Workers CLI:
    ```
@@ -147,6 +207,32 @@ The RSS service can be configured using a `feed-config.json` file in the project
 4. Deploy to Cloudflare Workers:
    ```
    wrangler publish
+   ```
+
+### Self-hosted
+
+You can also deploy the RSS service on your own server:
+
+1. Clone the repository
+2. Install dependencies:
+   ```
+   npm install
+   ```
+3. Create a `.env` file with the required environment variables:
+   ```
+   UPSTASH_REDIS_REST_URL=your-upstash-redis-rest-url
+   UPSTASH_REDIS_REST_TOKEN=your-upstash-redis-rest-token
+   API_SECRET=your-api-secret
+   PORT=4001 # Optional, defaults to 4001
+   ALLOWED_ORIGINS=https://example.com,https://app.example.com # Optional
+   ```
+4. Build the project:
+   ```
+   npm run build
+   ```
+5. Start the server:
+   ```
+   npm start
    ```
 
 ## Integration with RSS Plugin

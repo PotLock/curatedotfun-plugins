@@ -5,22 +5,26 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "ts-node-esm src/index.ts",
+    "dev": "USE_REDIS_MOCK=true API_SECRET=dev-secret bun src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@hono/node-server": "^1.2.0",
+    "@types/redis-mock": "^0.17.3",
     "@upstash/redis": "^1.22.0",
     "feed": "^4.2.2",
     "hono": "^3.9.0",
+    "ioredis": "^5.5.0",
+    "redis-mock": "^0.56.3",
     "sanitize-html": "^2.11.0"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.2",
     "@types/node": "^20.0.0",
     "ts-node": "^10.9.1",
+    "ts-node-esm": "^0.0.6",
     "typescript": "^5.0.0"
   }
 }

@@ -51,7 +51,7 @@ async function startServer() {
   
   // Start server if not in production (Vercel will handle this in prod)
   if (process.env.NODE_ENV !== "production") {
-    const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+    const port = process.env.PORT ? parseInt(process.env.PORT) : 4001;
     serve({
       fetch: app.fetch,
       port,

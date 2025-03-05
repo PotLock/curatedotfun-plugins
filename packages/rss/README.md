@@ -15,7 +15,7 @@ The RSS plugin enables distribution of curated content to RSS feeds, allowing yo
 
 ## 🔧 Setup Guide
 
-1. Deploy the RSS service to your preferred hosting platform (see the [RSS Service README](../../apps/rss-service/README.md) for deployment options).
+1. Deploy the RSS service to your preferred hosting platform (see the [RSS Service README](../rss/service/README.md) for deployment options).
 
 2. Generate a secure random string to use as your API secret. This will be shared between your application and the RSS service.
 
