@@ -1,10 +1,13 @@
 import sanitizeHtml from "sanitize-html";
+import { parse } from "node-html-parser";
 
 /**
- * Strip HTML tags from a string
+ * Strip HTML tags from a string using node-html-parser for robust HTML parsing
  */
 export function stripHtml(html: string): string {
-  return html.replace(/<\/?[^>]+(>|$)/g, "");
+  if (!html) return "";
+  const root = parse(html);
+  return root.textContent || "";
 }
 
 /**

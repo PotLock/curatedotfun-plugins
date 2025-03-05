@@ -79,9 +79,11 @@ export default class ObjectTransformer
             return acc;
           }
           if (Array.isArray(result)) {
-            return [...acc, ...result];
+            result.forEach((item) => acc.push(item));
+          } else {
+            acc.push(result);
           }
-          return [...acc, result];
+          return acc;
         }, []);
       } else {
         const result = processTemplate(template);

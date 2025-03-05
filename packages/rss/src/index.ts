@@ -104,10 +104,6 @@ export default class RssPlugin
   private serviceUrl?: string;
   private apiSecret?: string;
 
-  constructor() {
-    // No initialization needed
-  }
-
   async initialize(config?: RssConfig): Promise<void> {
     if (!config) {
       throw new Error("RSS plugin requires configuration");

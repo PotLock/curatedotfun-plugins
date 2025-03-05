@@ -33,8 +33,12 @@ export function validateEnv(): void {
 }
 
 // API Secret for authentication
-export const API_SECRET = process.env.API_SECRET!;
-
+export const API_SECRET =
+  process.env.API_SECRET ||
+  (() => {
+    console.error("API_SECRET is not defined");
+    process.exit(1);
+  })();
 // Optional allowed origins for CORS (comma-separated list)
 export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
@@ -52,6 +56,8 @@ const DEFAULT_CONFIG: FeedConfig = {
   copyright: "test",
   language: "en",
   maxItems: 100,
+  image: "https://example.com/logo.png",
+  author: { name: "Feed Author", email: "author@example.com" },
 };
 
 // Load feed configuration from JSON file
@@ -71,5 +77,11 @@ export function loadConfig(): FeedConfig {
   }
 }
 
-// Export the loaded configuration
-export const feedConfig = loadConfig();
+// Lazy-load the configuration
+let _feedConfig: FeedConfig | null = null;
+export const getFeedConfig = (): FeedConfig => {
+  if (!_feedConfig) {
+    _feedConfig = loadConfig();
+  }
+  return _feedConfig;
+};

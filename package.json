@@ -18,8 +18,5 @@
     "@types/node": "^20.11.0",
     "prettier": "^3.3.3",
     "turbo": "latest"
-  },
-  "dependencies": {
-    "ioredis": "^5.5.0"
   }
 }

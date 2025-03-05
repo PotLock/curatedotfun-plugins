@@ -55,11 +55,12 @@ export async function handleRawJson(): Promise<Response> {
  * Get all items with format options
  */
 export async function handleGetItems(c: Context): Promise<Response> {
-  const format = (c.req.query("format") as ApiFormat) || "raw";
+  const format = c.req.query("format") || "raw";
   const items = await getItems();
 
+  // Validate format is a valid ApiFormat
   if (format === "raw" || format === "html") {
-    const formattedItems = formatItems(items, format);
+    const formattedItems = formatItems(items, format as ApiFormat);
     return c.json(formattedItems);
   } else {
     // Invalid format
@@ -78,7 +79,18 @@ export async function handleGetItems(c: Context): Promise<Response> {
  * Add item to feed
  */
 export async function handleAddItem(c: Context): Promise<Response> {
-  const item = await c.req.json<RssItem>();
+  let item: RssItem;
+  try {
+    item = await c.req.json<RssItem>();
+  } catch (error) {
+    return c.json(
+      {
+        error: "Invalid JSON",
+        message: "The request body must be valid JSON",
+      },
+      400,
+    );
+  }
 
   console.log("adding item", item);
 

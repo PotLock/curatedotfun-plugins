@@ -12,13 +12,12 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.2.0",
-    "@types/redis-mock": "^0.17.3",
     "@upstash/redis": "^1.22.0",
     "dotenv": "^16.4.7",
     "feed": "^4.2.2",
     "hono": "^3.9.0",
     "ioredis": "^5.5.0",
-    "redis-mock": "^0.56.3",
+    "node-html-parser": "^7.0.1",
     "sanitize-html": "^2.11.0"
   },
   "devDependencies": {

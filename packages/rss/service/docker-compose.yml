@@ -13,7 +13,7 @@ services:
       - "4001:4001"
     environment:
       - NODE_ENV=production
-      - API_SECRET=change-this-to-a-secure-random-string
+      - API_SECRET=${API_SECRET:-change-this-to-a-secure-random-string}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:

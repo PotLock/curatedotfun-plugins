@@ -15,10 +15,21 @@ import { authenticate } from "./middleware.js";
 import { initializeFeed } from "./storage.js";
 
 // Validate environment variables
-validateEnv();
+try {
+  validateEnv();
+} catch (error) {
+  console.error("Environment validation failed:", error);
+  process.exit(1);
+}
 
 // Create Hono app
 const app = new Hono();
+
+// Global error handler
+app.onError((err, c) => {
+  console.error(`Error: ${err}`);
+  return c.json({ error: err.message }, 500);
+});
 
 // Configure CORS with specific origins if provided
 app.use(
@@ -33,7 +44,7 @@ app.use(
 );
 
 // Apply authentication middleware
-app.use("*", authenticate);
+app.use("/api/*", authenticate);
 
 // Register routes
 app.get("/", handleRoot);
@@ -51,7 +62,8 @@ async function startServer() {
 
   // Start server if not in production (Vercel will handle this in prod)
   if (process.env.NODE_ENV !== "production") {
-    const port = process.env.PORT ? parseInt(process.env.PORT) : 4001;
+    const DEFAULT_PORT = 4001;
+    const port = process.env.PORT ? parseInt(process.env.PORT) : DEFAULT_PORT;
     serve({
       fetch: app.fetch,
       port,
