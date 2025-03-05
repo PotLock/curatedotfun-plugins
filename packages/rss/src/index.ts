@@ -1,6 +1,6 @@
 import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
 import { z } from "zod";
-import { RssItem } from "../service/src/types";
+import { RssItem } from "@rss-service/types";
 import { RssConfig } from "./types";
 
 // Define a schema for TwitterSubmission input with additional fields for RSS compatibility

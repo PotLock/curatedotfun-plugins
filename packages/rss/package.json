@@ -39,6 +39,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "feed": "^4.2.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {
