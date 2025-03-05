@@ -1,4 +1,4 @@
-import { FeedOptions, Item } from "feed/lib/typings/index.js";
+import { FeedOptions, Item } from "feed";
 
 // Format types supported by the service
 export type FeedFormat = "rss" | "atom" | "json" | "raw";
