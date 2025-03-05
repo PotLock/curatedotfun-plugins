@@ -15,7 +15,7 @@ export function validateEnv(): void {
   REQUIRED_ENV_VARS.forEach((varName) => {
     if (!process.env[varName]) {
       console.error(`Error: Environment variable ${varName} is required`);
-      process.exit(1);
+      throw new Error(`Missing required environment variable: ${varName}`);
     }
   });
 
@@ -26,7 +26,7 @@ export function validateEnv(): void {
         console.error(
           `Error: Environment variable ${varName} is required when not using Redis mock`,
         );
-        process.exit(1);
+        throw new Error(`Missing required environment variable: ${varName}`);
       }
     });
   }
@@ -37,7 +37,7 @@ export const API_SECRET =
   process.env.API_SECRET ||
   (() => {
     console.error("API_SECRET is not defined");
-    process.exit(1);
+    throw new Error("API_SECRET is not defined");
   })();
 // Optional allowed origins for CORS (comma-separated list)
 export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS

@@ -130,10 +130,20 @@ export async function handleAddItem(c: Context): Promise<Response> {
   };
 
   // Add item to feed's items list
-  await addItem(completeItem);
-
-  return c.json({
-    message: "Item added successfully",
-    item: completeItem,
-  });
+  try {
+    await addItem(completeItem);
+    return c.json({
+      message: "Item added successfully",
+      item: completeItem,
+    });
+  } catch (error) {
+    console.error("Failed to add item:", error);
+    return c.json(
+      {
+        error: "Storage Error",
+        message: "Failed to store the item. Please try again later.",
+      },
+      500,
+    );
+  }
 }
