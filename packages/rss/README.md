@@ -12,7 +12,7 @@ The RSS plugin enables distribution of curated content to RSS feeds, allowing yo
 - **Standard-Compliant URLs**: Access feeds via standard paths (`/rss.xml`, `/atom.xml`, `/feed.json`) or API route `/api/items`
 - **Raw Data Option**: Get content without HTML via `/raw.json` for frontend customization
 - **HTML Sanitization**: Secure content handling with sanitize-html
-- **Flexible Deployment**: Deploy the RSS service to various platforms (Vercel, Netlify, Heroku, Cloudflare)
+- **Flexible Deployment**: Deploy the RSS service to various platforms (Vercel, Netlify, Cloudflare)
 - **Secure Authentication**: Simple API secret authentication for feed management
 - **Redis Storage**: Efficient storage with Upstash Redis (production) or Redis mock (development)
 
