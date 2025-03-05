@@ -1,6 +1,6 @@
 {
   "name": "@curatedotfun/object-transform",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Object transformation plugin for curatedotfun with configurable field mappings",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -34,14 +34,16 @@
   "scripts": {
     "build": "rspack build && tsc -p tsconfig.build.json",
     "dev": "rspack serve",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest"
   },
   "devDependencies": {
     "@curatedotfun/types": "workspace:*",
     "@curatedotfun/utils": "workspace:*",
     "@rspack/cli": "latest",
     "@types/mustache": "^4.2.5",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "latest"
   },
   "dependencies": {
     "mustache": "^4.2.0",

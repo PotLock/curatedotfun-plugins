@@ -10,7 +10,7 @@ A lightweight, scalable RSS feed service built with Hono.js and Upstash Redis. T
 - **HTML Sanitization**: Secure content handling with sanitize-html
 - **Simple Authentication**: API secret-based authentication for feed management
 - **Configurable CORS**: Cross-origin request support
-- **Flexible Deployment**: Deploy to various platforms (Vercel, Netlify, Heroku, Cloudflare)
+- **Flexible Deployment**: Deploy to various platforms ([Vercel](https://vercel.com), [Netlify](https://netlify.com), [Heroku](https://heroku.com), [Railway](https://railway.app), [Cloudflare](https://workers.cloudflare.com))
 - **Redis Storage**: Efficient storage with Upstash Redis (production) or Redis mock (development)
 - **Docker Support**: Easy local development with Docker and Docker Compose
 
@@ -88,7 +88,7 @@ This configuration file allows you to customize the feed metadata, including tit
 The easiest way to run the RSS service locally is using Docker with the provided Dockerfile and docker-compose.yml:
 
 1. Make sure you have Docker and Docker Compose installed on your system
-   - For macOS users, we recommend using [OrbStack](https://orbstack.dev/) instead of Docker Desktop for better performance and resource usage
+   - For macOS users, we recommend using [OrbStack](https://orbstack.dev) instead of [Docker Desktop](https://www.docker.com/products/docker-desktop) for better performance and resource usage
 2. Navigate to the service directory
 3. Run the service with Docker Compose:
 
@@ -135,7 +135,7 @@ For local development without Docker, you can use the Redis mock:
 
 For production deployments, this service uses Upstash Redis for storing and retrieving RSS feed items. Follow these steps to set up Upstash Redis:
 
-1. Create an account at [Upstash](https://upstash.com/) if you don't have one
+1. Create an account at [Upstash](https://upstash.com) if you don't have one
 2. Create a new Redis database:
    - Go to the Upstash Console
    - Click "Create Database"
@@ -152,7 +152,7 @@ For production deployments, this service uses Upstash Redis for storing and retr
 
 ### Vercel (Recommended with Upstash)
 
-Vercel and Upstash have a seamless integration, making this the recommended deployment option:
+[Vercel](https://vercel.com) and [Upstash](https://upstash.com) have a seamless integration, making this the recommended deployment option:
 
 1. Create a `vercel.json` file in the project root:
 
@@ -211,7 +211,7 @@ Vercel and Upstash have a seamless integration, making this the recommended depl
    }
    ```
 
-3. Create a new Heroku app:
+3. Create a new [Heroku](https://heroku.com) app:
 
    ```cmd
    heroku create your-rss-service
@@ -233,7 +233,7 @@ Vercel and Upstash have a seamless integration, making this the recommended depl
 
 ### Netlify
 
-1. Create a new site in Netlify
+1. Create a new site in [Netlify](https://netlify.com)
 2. Link your repository
 3. Configure the build settings:
    - Build Command: `npm run build`
@@ -246,7 +246,7 @@ Vercel and Upstash have a seamless integration, making this the recommended depl
 
 ### Railway (Docker Deployment)
 
-[Railway](https://railway.app/) provides an easy way to deploy Docker containers with minimal configuration:
+[Railway](https://railway.app) provides an easy way to deploy Docker containers with minimal configuration:
 
 1. Create an account on [Railway](https://railway.app/) if you don't have one
 2. Install the Railway CLI:
@@ -284,7 +284,7 @@ Railway will automatically detect and use your docker-compose.yml file, making i
 
 ### Cloudflare Workers
 
-Cloudflare Workers can be used with Upstash Redis's REST API:
+[Cloudflare Workers](https://workers.cloudflare.com) can be used with Upstash Redis's REST API:
 
 1. Install Cloudflare Workers CLI:
 
@@ -330,23 +330,30 @@ You can also deploy the RSS service on your own server:
 
 1. Clone the repository
 2. Install dependencies:
-   ```
+
+   ```cmd
    npm install
    ```
+
 3. Create a `.env` file with the required environment variables:
-   ```
+
+   ```cmd
    UPSTASH_REDIS_REST_URL=your-upstash-redis-rest-url
    UPSTASH_REDIS_REST_TOKEN=your-upstash-redis-rest-token
    API_SECRET=your-api-secret
    PORT=4001 # Optional, defaults to 4001
    ALLOWED_ORIGINS=https://example.com,https://app.example.com # Optional
    ```
+
 4. Build the project:
-   ```
+
+   ```cmd
    npm run build
    ```
+
 5. Start the server:
-   ```
+
+   ```cmd
    npm start
    ```
 
@@ -390,14 +397,14 @@ See the [RSS Plugin README](../README.md) for more details on the plugin's capab
 
 ## Development
 
-### Local Development with Bun
+### Local Development
 
 1. Clone the repository
 2. Navigate to the service directory
 3. Install dependencies:
 
    ```bash
-   bun install
+   npm install
    ```
 
 4. Create a `.env` file with the required environment variables:
@@ -411,7 +418,7 @@ See the [RSS Plugin README](../README.md) for more details on the plugin's capab
 5. Start the development server:
 
    ```bash
-   bun run dev
+   npm run dev
    ```
 
 6. The RSS service will be available at <http://localhost:4001>
