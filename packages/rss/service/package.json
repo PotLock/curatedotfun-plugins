@@ -18,7 +18,8 @@
     "hono": "^3.9.0",
     "ioredis": "^5.5.0",
     "node-html-parser": "^7.0.1",
-    "sanitize-html": "^2.11.0"
+    "sanitize-html": "^2.11.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.2",

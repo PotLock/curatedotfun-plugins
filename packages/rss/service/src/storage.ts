@@ -1,8 +1,9 @@
-import { DEFAULT_FEED_ID, feedConfig } from "./config.js";
+import { DEFAULT_FEED_ID, getFeedConfig } from "./config.js";
 import { RssItem } from "./types.js";
 
 // Initialize Redis client based on environment
 let redis: any;
+const feedConfig = getFeedConfig();
 
 // Determine which Redis client to use
 const initializeRedis = async () => {

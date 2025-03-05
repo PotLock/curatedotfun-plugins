@@ -33,12 +33,8 @@ export function validateEnv(): void {
 }
 
 // API Secret for authentication
-export const API_SECRET =
-  process.env.API_SECRET ||
-  (() => {
-    console.error("API_SECRET is not defined");
-    throw new Error("API_SECRET is not defined");
-  })();
+export const API_SECRET = process.env.API_SECRET!;
+
 // Optional allowed origins for CORS (comma-separated list)
 export const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
@@ -77,11 +73,6 @@ export function loadConfig(): FeedConfig {
   }
 }
 
-// Lazy-load the configuration
-let _feedConfig: FeedConfig | null = null;
 export const getFeedConfig = (): FeedConfig => {
-  if (!_feedConfig) {
-    _feedConfig = loadConfig();
-  }
-  return _feedConfig;
+  return loadConfig();
 };

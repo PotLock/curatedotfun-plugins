@@ -1,4 +1,5 @@
 import { Context } from "hono";
+import { v4 as uuidv4 } from "uuid";
 import { formatItems, generateFeed } from "./formatters.js";
 import { addItem, getItems } from "./storage.js";
 import { ApiFormat, RssItem } from "./types.js";
@@ -92,8 +93,6 @@ export async function handleAddItem(c: Context): Promise<Response> {
     );
   }
 
-  console.log("adding item", item);
-
   // Validate required fields
   if (!item.content) {
     return c.json(
@@ -118,8 +117,8 @@ export async function handleAddItem(c: Context): Promise<Response> {
   // Ensure required fields have values
   const completeItem: RssItem = {
     ...item,
-    id: item.id || `item-${Date.now()}`,
-    guid: item.guid || `item-${Date.now()}`,
+    id: item.id || uuidv4(),
+    guid: item.guid || uuidv4(),
 
     title: sanitize(item.title),
     description: sanitize(item.description || ""),

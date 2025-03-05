@@ -230,8 +230,6 @@ export default class RssPlugin
       throw new Error("RSS service URL is required");
     }
 
-    console.log("saving item", item);
-
     try {
       const response = await fetch(`${this.serviceUrl}/api/items`, {
         method: "POST",
