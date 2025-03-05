@@ -1,133 +1,260 @@
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import type {
-  DistributorPlugin,
-  DBOperations,
-  RssItem,
-  ActionArgs,
-} from "@curatedotfun/types";
-import { RssService } from "./rss.service";
+import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
+import { Category, Enclosure } from "feed/lib/typings/index.js";
+import { z } from "zod";
+import { RssItem } from "../service/src/types";
+import { RssConfig } from "./types";
 
-interface RssConfig {
-  feedId: string;
-  title: string;
-  maxItems?: string;
-  path?: string;
-  [key: string]: string | undefined;
-}
+// Define a schema for TwitterSubmission input with additional fields for RSS compatibility
+const RssItemSchema = z.object({
+  // Core fields
+  title: z.string().optional(), // Optional custom title
+  content: z.string().optional(), // Content of the item
+  description: z.string().optional(), // Optional description/summary
+  link: z.string().optional(), // URL to the item
+  publishedAt: z.string().optional(), // Publication date
+  guid: z.string().optional(), // Unique identifier
 
-export default class RssPlugin implements DistributorPlugin<string, RssConfig> {
+  // Author information
+  author: z
+    .object({
+      name: z.string(),
+      email: z.string().optional(),
+      link: z.string().optional(),
+    })
+    .optional()
+    .or(
+      z.array(
+        z.object({
+          name: z.string(),
+          email: z.string().optional(),
+          link: z.string().optional(),
+        }),
+      ),
+    ), // Author(s) information
+
+  // Media and categorization
+  image: z
+    .string()
+    .optional()
+    .or(
+      z.object({
+        url: z.string(),
+        type: z.string().optional(),
+        length: z.number().optional(),
+      }),
+    ), // Image URL or enclosure
+  audio: z
+    .string()
+    .optional()
+    .or(
+      z.object({
+        url: z.string(),
+        type: z.string().optional(),
+        length: z.number().optional(),
+      }),
+    ), // Audio URL or enclosure
+  video: z
+    .string()
+    .optional()
+    .or(
+      z.object({
+        url: z.string(),
+        type: z.string().optional(),
+        length: z.number().optional(),
+      }),
+    ), // Video URL or enclosure
+  enclosure: z
+    .object({
+      url: z.string(),
+      type: z.string().optional(),
+      length: z.number().optional(),
+    })
+    .optional(), // Generic enclosure
+  categories: z
+    .array(z.string())
+    .optional()
+    .or(
+      z.array(
+        z.object({
+          name: z.string(),
+          domain: z.string().optional(),
+        }),
+      ),
+    ), // Categories/tags
+
+  // Additional metadata
+  copyright: z.string().optional(), // Copyright information
+  source: z
+    .object({
+      url: z.string(),
+      title: z.string(),
+    })
+    .optional(), // Source information
+  isPermaLink: z.boolean().optional(), // Whether guid is a permalink
+});
+
+type RssInput = z.infer<typeof RssItemSchema>;
+
+export default class RssPlugin
+  implements DistributorPlugin<RssInput, RssConfig>
+{
   readonly type = "distributor" as const;
-  private services: Map<string, RssService> = new Map();
-  private dbOps?: DBOperations;
 
-  getServices(): Map<string, RssService> {
-    return this.services;
-  }
-
-  constructor(dbOperations?: DBOperations) {
-    this.dbOps = dbOperations;
-  }
+  // Essential service properties
+  private serviceUrl?: string;
+  private apiSecret?: string;
 
   async initialize(config?: RssConfig): Promise<void> {
     if (!config) {
       throw new Error("RSS plugin requires configuration");
     }
-    if (!config.title) {
-      throw new Error("RSS plugin requires title");
+    if (!config.serviceUrl) {
+      throw new Error("RSS plugin requires serviceUrl");
     }
-    if (!config.feedId) {
-      throw new Error("RSS plugin requires feedId");
-    }
-
-    const maxItems = config.maxItems ? parseInt(config.maxItems) : 100;
-
-    // Create a new RSS service for this feed
-    const service = new RssService(
-      config.feedId,
-      config.title,
-      maxItems,
-      config.path,
-      this.dbOps,
-    );
-
-    this.services.set(config.feedId, service);
-  }
-
-  async distribute({
-    input: content,
-    config,
-  }: ActionArgs<string, RssConfig>): Promise<void> {
-    if (!config?.feedId) {
-      throw new Error("RSS plugin requires feedId in config");
-    }
-    const service = this.services.get(config.feedId);
-    if (!service) {
-      throw new Error("RSS plugin not initialized for this feed");
+    if (!config.apiSecret) {
+      throw new Error("RSS plugin requires apiSecret");
     }
 
-    const item: RssItem = {
-      title: "New Update",
-      content,
-      link: "https://twitter.com/", // TODO: Update with actual link
-      publishedAt: new Date().toISOString(),
-      guid: Date.now().toString(),
-    };
+    // Store only essential configuration
+    this.serviceUrl = config.serviceUrl;
+    this.apiSecret = config.apiSecret;
 
-    // Save to database
-    service.saveItem(item);
+    // Check if service is running with a health check
+    try {
+      const healthCheckResponse = await fetch(`${this.serviceUrl}/`, {
+        method: "GET",
+      });
 
-    // Write to file if path is provided (backward compatibility)
-    const filePath = service.getPath();
-    if (filePath) {
-      await this.writeToFile(service, filePath);
+      if (!healthCheckResponse.ok) {
+        console.warn(
+          `Warning: RSS service health check returned status ${healthCheckResponse.status}`,
+        );
+      } else {
+        console.log("RSS service is running");
+      }
+    } catch (error) {
+      console.error("Error checking RSS service:", error);
+      throw new Error(`Failed to initialize RSS feed: ${error}`);
     }
   }
 
-  private async writeToFile(
-    service: RssService,
-    filePath: string,
-  ): Promise<void> {
-    const items = await service.getItems();
+  async distribute({ input }: ActionArgs<RssInput, RssConfig>): Promise<void> {
+    try {
+      // Validate input
+      const validatedInput = RssItemSchema.parse(input);
 
-    const feed = `<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
-  <channel>
-    <title>${service.getTitle()}</title>
-    <link>https://twitter.com/</link>
-    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-    ${items
-      .map(
-        (item) => `
-    <item>
-      <title>${this.escapeXml(item.title || "")}</title>
-      <description>${this.escapeXml(item.content)}</description>
-      <link>${item.link || ""}</link>
-      <pubDate>${new Date(item.publishedAt).toUTCString()}</pubDate>
-      <guid>${item.guid || ""}</guid>
-    </item>`,
-      )
-      .join("\n")}
-  </channel>
-</rss>`;
+      // Create a complete RssItem with defaults for missing fields
+      const item: RssItem = {
+        // Required fields - ensure we have values for these
+        content: validatedInput.content || validatedInput.description || "",
+        link: validatedInput.link || "",
+        guid: validatedInput.guid || validatedInput.link || String(Date.now()), // Use link as fallback or timestamp
+        // Ensure dates are in UTC
+        published: validatedInput.publishedAt
+          ? new Date(validatedInput.publishedAt)
+          : new Date(),
+        date: new Date(), // Current date
 
-    // Ensure directory exists
-    const dir = path.dirname(filePath);
-    await mkdir(dir, { recursive: true });
-    await writeFile(filePath, feed, "utf-8");
+        // Title is required in the Item interface
+        title: validatedInput.title || "Untitled",
+
+        // Handle author(s)
+        ...(validatedInput.author && {
+          author: Array.isArray(validatedInput.author)
+            ? validatedInput.author
+            : [validatedInput.author],
+        }),
+
+        // Handle categories
+        ...(validatedInput.categories && {
+          category: Array.isArray(validatedInput.categories)
+            ? typeof validatedInput.categories[0] === "string"
+              ? validatedInput.categories.map(
+                  (cat) => ({ name: cat as string }) as Category,
+                )
+              : (validatedInput.categories as Category[])
+            : [
+                {
+                  name: validatedInput.categories as unknown as string,
+                } as Category,
+              ],
+        }),
+
+        // Handle media enclosures
+        ...(validatedInput.image && {
+          image:
+            typeof validatedInput.image === "string"
+              ? validatedInput.image
+              : (validatedInput.image as Enclosure),
+        }),
+
+        ...(validatedInput.audio && {
+          audio:
+            typeof validatedInput.audio === "string"
+              ? validatedInput.audio
+              : (validatedInput.audio as Enclosure),
+        }),
+
+        ...(validatedInput.video && {
+          video:
+            typeof validatedInput.video === "string"
+              ? validatedInput.video
+              : (validatedInput.video as Enclosure),
+        }),
+
+        // Additional metadata
+        ...(validatedInput.enclosure && {
+          enclosure: validatedInput.enclosure as Enclosure,
+        }),
+        ...(validatedInput.source && { source: validatedInput.source }),
+        ...(validatedInput.isPermaLink !== undefined && {
+          isPermaLink: validatedInput.isPermaLink,
+        }),
+      };
+
+      // Save to RSS service
+      await this.saveItem(item);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        throw new Error(`Invalid RSS item: ${error.message}`);
+      }
+      throw error;
+    }
   }
 
-  private escapeXml(unsafe: string): string {
-    return unsafe
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
+  /**
+   * Save an item to the RSS service
+   */
+  private async saveItem(item: RssItem): Promise<void> {
+    if (!this.serviceUrl) {
+      throw new Error("RSS service URL is required");
+    }
+
+    try {
+      const response = await fetch(`${this.serviceUrl}/api/items`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(this.apiSecret
+            ? { Authorization: `Bearer ${this.apiSecret}` }
+            : {}),
+        },
+        body: JSON.stringify(item),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `Failed to save item to RSS service: ${errorData.error || response.statusText}`,
+        );
+      }
+    } catch (error) {
+      console.error("Error saving item to RSS service:", error);
+      throw error;
+    }
   }
 
   async shutdown(): Promise<void> {
-    // Clear all services when plugin shuts down
-    this.services.clear();
+    // No cleanup needed
   }
 }

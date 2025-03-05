@@ -34,7 +34,6 @@ export default function calculateSizeOfData(
               })
             );
           }
-
           return (
             acc +
             BigInt(key.length * 2) +
@@ -45,13 +44,22 @@ export default function calculateSizeOfData(
         BigInt(isObject(previousData) ? 0 : ESTIMATED_NODE_SIZE),
       );
     }
+    // Handle different data types appropriately
+    let currentSize =
+      typeof _data === "string"
+        ? _data.length
+        : typeof _data === "number" || typeof _data === "boolean"
+          ? 8
+          : _data === null || _data === undefined
+            ? 4
+            : 8;
 
-    return BigInt(
-      (typeof _data === "string" ? _data.length : 8) -
-        (previousData && typeof previousData === "string"
-          ? previousData.length
-          : 0),
-    );
+    let previousSize =
+      previousData && typeof previousData === "string"
+        ? previousData.length
+        : 0;
+
+    return BigInt(currentSize - previousSize);
   };
 
   return calculate(data);

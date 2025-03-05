@@ -114,7 +114,6 @@ describe("NearSocialPlugin", () => {
       // Verify callMethod was called
       expect(callMethodSpy).toHaveBeenCalled();
 
-      // Verify console.log was called with success message
       expect(console.log).toHaveBeenCalledWith(
         "Successfully posted to NEAR Social",
       );

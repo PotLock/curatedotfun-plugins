@@ -130,7 +130,6 @@ export default class AITransformer<T = string>
       const result = (await response.json()) as OpenRouterResponse;
 
       if (!result.choices?.[0]?.message?.content) {
-        console.log("result", result);
         throw new Error("Invalid response structure from OpenRouter API");
       }
 

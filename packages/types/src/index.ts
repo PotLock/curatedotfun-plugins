@@ -57,19 +57,9 @@ export type PluginTypeMap<
   distributor: DistributorPlugin<TInput, TConfig>;
 };
 
-// (BELOW IS DEPRECIATED) - to be removed
-
-// RSS types
-export interface RssItem {
-  title?: string;
-  content: string;
-  link?: string;
-  publishedAt: string;
-  guid: string;
-}
-
+// Database operations interface
 export interface DBOperations {
-  saveRssItem: (feedId: string, item: RssItem) => Promise<void>;
+  saveRssItem: <T>(feedId: string, item: T) => Promise<void>;
   deleteOldRssItems: (feedId: string, maxItems: number) => Promise<void>;
-  getRssItems: (feedId: string, limit: number) => Promise<RssItem[]>;
+  getRssItems: <T>(feedId: string, limit: number) => Promise<T[]>;
 }
