@@ -1,5 +1,4 @@
 import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
-import { Category, Enclosure } from "feed/lib/typings/index.js";
 import { z } from "zod";
 import { RssItem } from "../service/src/types";
 import { RssConfig } from "./types";
@@ -169,14 +168,17 @@ export default class RssPlugin
         ...(validatedInput.categories && {
           category: Array.isArray(validatedInput.categories)
             ? typeof validatedInput.categories[0] === "string"
-              ? validatedInput.categories.map(
-                  (cat) => ({ name: cat as string }) as Category,
-                )
-              : (validatedInput.categories as Category[])
+              ? validatedInput.categories.map((cat) => ({
+                  name: cat as string,
+                }))
+              : (validatedInput.categories as {
+                  name: string;
+                  domain?: string;
+                }[])
             : [
                 {
                   name: validatedInput.categories as unknown as string,
-                } as Category,
+                },
               ],
         }),
 
@@ -185,26 +187,26 @@ export default class RssPlugin
           image:
             typeof validatedInput.image === "string"
               ? validatedInput.image
-              : (validatedInput.image as Enclosure),
+              : validatedInput.image,
         }),
 
         ...(validatedInput.audio && {
           audio:
             typeof validatedInput.audio === "string"
               ? validatedInput.audio
-              : (validatedInput.audio as Enclosure),
+              : validatedInput.audio,
         }),
 
         ...(validatedInput.video && {
           video:
             typeof validatedInput.video === "string"
               ? validatedInput.video
-              : (validatedInput.video as Enclosure),
+              : validatedInput.video,
         }),
 
         // Additional metadata
         ...(validatedInput.enclosure && {
-          enclosure: validatedInput.enclosure as Enclosure,
+          enclosure: validatedInput.enclosure,
         }),
         ...(validatedInput.source && { source: validatedInput.source }),
         ...(validatedInput.isPermaLink !== undefined && {

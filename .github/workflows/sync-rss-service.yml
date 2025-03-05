@@ -11,7 +11,7 @@ jobs:
     uses: ./.github/workflows/sync-service-template.yml
     with:
       source_path: packages/rss/service
-      target_repo: curatedotfun/rss-service-template
+      target_repo: potlock/rss-service-template
       target_branch: main
     secrets:
       deploy_token: ${{ secrets.RSS_DEPLOY_TOKEN }}
