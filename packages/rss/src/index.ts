@@ -119,9 +119,9 @@ export default class RssPlugin
     try {
       const url = new URL(config.serviceUrl);
       // Enforce HTTPS
-      url.protocol = 'https:';
+      url.protocol = "https:";
       // Remove trailing slash from pathname if present
-      if (url.pathname.endsWith('/') && url.pathname.length > 1) {
+      if (url.pathname.endsWith("/") && url.pathname.length > 1) {
         url.pathname = url.pathname.slice(0, -1);
       }
       this.serviceUrl = url.toString();
