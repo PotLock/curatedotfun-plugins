@@ -158,4 +158,47 @@ describe("ObjectTransformer", () => {
       array: ["[not valid json]"],
     });
   });
+
+  it("should handle nested objects in mappings", async () => {
+    await transformer.initialize({
+      mappings: {
+        title: "{{title}}",
+        content: "<h2>{{title}}</h2><p>{{summary}}</p>",
+        author: {
+          name: "{{username}}",
+          link: "https://x.com/{{author}}"
+        },
+        categories: ["near", "{{tags}}"],
+        source: {
+          url: "{{source}}",
+          title: "twitter"
+        }
+      },
+    });
+
+    const result = await transformer.transform({
+      input: {
+        title: "Test Post",
+        summary: "This is a test post",
+        username: "testuser",
+        author: "testhandle",
+        tags: ["test", "example"],
+        source: "https://twitter.com/testhandle/status/123456789"
+      },
+    });
+
+    expect(result).toEqual({
+      title: "Test Post",
+      content: "<h2>Test Post</h2><p>This is a test post</p>",
+      author: {
+        name: "testuser",
+        link: "https://x.com/testhandle"
+      },
+      categories: ["near", "test", "example"],
+      source: {
+        url: "https://twitter.com/testhandle/status/123456789",
+        title: "twitter"
+      }
+    });
+  });
 });
