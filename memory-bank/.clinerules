@@ -1,0 +1,146 @@
+# Cline Rules for curate.fun Plugins
+
+## Project Patterns
+
+1. **Plugin Implementation Pattern**:
+   - Plugins are implemented as classes that implement either the `TransformerPlugin` or `DistributorPlugin` interface
+   - All plugins must have an `initialize` method that accepts configuration
+   - All plugins should have a `shutdown` method for cleanup
+   - Transformer plugins must have a `transform` method
+   - Distributor plugins must have a `distribute` method
+
+2. **Error Handling Pattern**:
+   - Plugins should catch and handle errors gracefully
+   - Error messages should be descriptive and include the original error message
+   - Errors should be properly typed and propagated
+
+3. **Configuration Pattern**:
+   - Plugins should validate their configuration during initialization
+   - Configuration should be typed using TypeScript interfaces
+   - Environment variables should be used for sensitive information
+
+4. **Testing Pattern**:
+   - Plugins should have unit tests for their core functionality
+   - Tests should cover both success and error cases
+   - Mock objects should be used for external dependencies
+
+## Development Workflow
+
+1. **Creating a New Plugin**:
+   - Create a new directory in the `packages/` directory
+   - Implement the appropriate plugin interface
+   - Add the plugin to the development registry in the example app
+   - Test the plugin using the example app
+   - Build and publish the plugin
+
+2. **Running the Development Environment**:
+   - Use `bun run dev` to start the development server for all plugins
+   - Use `bun run dev --filter=@curatedotfun/plugin-name` to start a specific plugin
+   - The example app provides a UI for testing plugins
+
+3. **Building Plugins**:
+   - Use `bun run build` to build all plugins
+   - Use `bun run build --filter=@curatedotfun/plugin-name` to build a specific plugin
+
+## Code Style Preferences
+
+1. **TypeScript**:
+   - Use TypeScript for all code
+   - Use interfaces for type definitions
+   - Use proper typing for all variables and functions
+
+2. **Error Handling**:
+   - Use try/catch blocks for error handling
+   - Provide descriptive error messages
+   - Include the original error message when rethrowing
+
+3. **Asynchronous Code**:
+   - Use async/await for asynchronous operations
+   - Return Promises from asynchronous functions
+   - Handle Promise rejections properly
+
+4. **Documentation**:
+   - Document public methods and interfaces
+   - Provide examples where appropriate
+   - Document configuration options
+
+## Project-Specific Knowledge
+
+1. **Plugin Types**:
+   - Transformer plugins: Convert content from one format to another
+   - Distributor plugins: Send content to external platforms or services
+
+2. **Plugin Lifecycle**:
+   - Initialize: Set up the plugin with configuration
+   - Operation: Transform or distribute content
+   - Shutdown: Clean up resources
+
+3. **Plugin Configuration**:
+   - Configuration is provided during initialization
+   - Environment variables are used for sensitive information
+   - The plugin manager hydrates environment variables in configurations
+
+4. **Plugin Registry**:
+   - Plugins are registered in the plugin registry
+   - The registry maps plugin names to their URLs and types
+   - The plugin manager uses the registry to load plugins
+
+## Common Challenges and Solutions
+
+1. **External Service Dependencies**:
+   - Some plugins require external services to be running
+   - Use environment variables for service configuration
+   - Provide clear documentation on service requirements
+
+2. **Configuration Complexity**:
+   - Some plugins have complex configuration requirements
+   - Use TypeScript interfaces to define configuration types
+   - Validate configuration during initialization
+
+3. **Error Handling**:
+   - Error handling can be inconsistent across plugins
+   - Use standardized error handling patterns
+   - Provide descriptive error messages
+
+4. **Testing**:
+   - Testing external service integrations can be challenging
+   - Use mock objects for external dependencies
+   - Test both success and error cases
+
+## Useful Commands
+
+1. **Development**:
+   ```bash
+   # Run all plugins and example plugin manager
+   bun run dev
+
+   # Run specific plugins
+   bun run dev --filter=@curatedotfun/plugin-name
+   ```
+
+2. **Building**:
+   ```bash
+   # Build all plugins
+   bun run build
+
+   # Build a specific plugin
+   bun run build --filter=@curatedotfun/plugin-name
+   ```
+
+3. **Testing**:
+   ```bash
+   # Run tests for all plugins
+   bun run test
+
+   # Run tests for a specific plugin
+   bun run test --filter=@curatedotfun/plugin-name
+   ```
+
+4. **Formatting**:
+   ```bash
+   # Format all code
+   bun run fmt
+
+   # Check formatting
+   bun run fmt:check
+   ```
