@@ -115,8 +115,20 @@ export default class RssPlugin
     }
 
     // Store only essential configuration
-    this.serviceUrl = config.serviceUrl;
-    this.apiSecret = config.apiSecret;
+    // Parse and normalize the service URL (enforce HTTPS and remove trailing slash)
+    try {
+      const url = new URL(config.serviceUrl);
+      // Enforce HTTPS
+      url.protocol = "https:";
+      // Remove trailing slash from pathname if present
+      if (url.pathname.endsWith("/") && url.pathname.length > 1) {
+        url.pathname = url.pathname.slice(0, -1);
+      }
+      this.serviceUrl = url.toString();
+    } catch (error) {
+      throw new Error(`Invalid service URL: ${config.serviceUrl}`);
+    }
+    this.apiSecret = config.apiSecret.trim();
 
     // Check if service is running with a health check
     try {
