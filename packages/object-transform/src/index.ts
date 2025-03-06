@@ -3,15 +3,13 @@ import { z } from "zod";
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 
 // Disable HTML escaping in Mustache
-Mustache.escape = function (text) { return text; };
+Mustache.escape = function (text) {
+  return text;
+};
 
 // Schema for the configuration
 const MappingValueSchema: z.ZodType<any> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.array(z.string()),
-    z.record(MappingValueSchema),
-  ])
+  z.union([z.string(), z.array(z.string()), z.record(MappingValueSchema)]),
 );
 
 const ConfigSchema = z.object({
@@ -22,7 +20,8 @@ type Config = z.infer<typeof ConfigSchema>;
 
 export default class ObjectTransformer
   implements
-  TransformerPlugin<Record<string, unknown>, Record<string, unknown>, Config> {
+    TransformerPlugin<Record<string, unknown>, Record<string, unknown>, Config>
+{
   readonly type = "transformer" as const;
   private config: Config | null = null;
 
@@ -50,7 +49,7 @@ export default class ObjectTransformer
     // Recursive function to process mappings, including nested objects
     const processMapping = (
       template: string | string[] | Record<string, unknown>,
-      inputData: Record<string, unknown>
+      inputData: Record<string, unknown>,
     ): unknown => {
       // Helper function to process template value
       const processTemplate = (template: string) => {

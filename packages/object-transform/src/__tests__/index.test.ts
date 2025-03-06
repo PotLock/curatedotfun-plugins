@@ -166,13 +166,13 @@ describe("ObjectTransformer", () => {
         content: "<h2>{{title}}</h2><p>{{summary}}</p>",
         author: {
           name: "{{username}}",
-          link: "https://x.com/{{author}}"
+          link: "https://x.com/{{author}}",
         },
         categories: ["near", "{{tags}}"],
         source: {
           url: "{{source}}",
-          title: "twitter"
-        }
+          title: "twitter",
+        },
       },
     });
 
@@ -183,7 +183,7 @@ describe("ObjectTransformer", () => {
         username: "testuser",
         author: "testhandle",
         tags: ["test", "example"],
-        source: "https://twitter.com/testhandle/status/123456789"
+        source: "https://twitter.com/testhandle/status/123456789",
       },
     });
 
@@ -192,13 +192,13 @@ describe("ObjectTransformer", () => {
       content: "<h2>Test Post</h2><p>This is a test post</p>",
       author: {
         name: "testuser",
-        link: "https://x.com/testhandle"
+        link: "https://x.com/testhandle",
       },
       categories: ["near", "test", "example"],
       source: {
         url: "https://twitter.com/testhandle/status/123456789",
-        title: "twitter"
-      }
+        title: "twitter",
+      },
     });
   });
 });
