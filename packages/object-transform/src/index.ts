@@ -2,9 +2,18 @@ import Mustache from "mustache";
 import { z } from "zod";
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 
+// Disable HTML escaping in Mustache
+Mustache.escape = function (text) {
+  return text;
+};
+
 // Schema for the configuration
+const MappingValueSchema: z.ZodType<any> = z.lazy(() =>
+  z.union([z.string(), z.array(z.string()), z.record(MappingValueSchema)]),
+);
+
 const ConfigSchema = z.object({
-  mappings: z.record(z.union([z.string(), z.array(z.string())])),
+  mappings: z.record(MappingValueSchema),
 });
 
 type Config = z.infer<typeof ConfigSchema>;
@@ -37,12 +46,14 @@ export default class ObjectTransformer
 
     const output: Record<string, unknown> = {};
 
-    for (const [outputField, template] of Object.entries(
-      this.config.mappings,
-    )) {
+    // Recursive function to process mappings, including nested objects
+    const processMapping = (
+      template: string | string[] | Record<string, unknown>,
+      inputData: Record<string, unknown>,
+    ): unknown => {
       // Helper function to process template value
       const processTemplate = (template: string) => {
-        const rendered = Mustache.render(template, input);
+        const rendered = Mustache.render(template, inputData);
 
         // If the template references a field that's an array or object, return it directly
         const fieldMatch = template.match(/^\{\{([^}]+)\}\}$/);
@@ -50,7 +61,7 @@ export default class ObjectTransformer
           const field = fieldMatch[1];
           const value = field
             .split(".")
-            .reduce((obj: any, key) => obj?.[key], input);
+            .reduce((obj: any, key) => obj?.[key], inputData);
           if (
             Array.isArray(value) ||
             (typeof value === "object" && value !== null)
@@ -71,10 +82,14 @@ export default class ObjectTransformer
         return rendered;
       };
 
-      // Process the template or array of templates
-      if (Array.isArray(template)) {
+      // Process based on template type
+      if (typeof template === "string") {
+        const result = processTemplate(template);
+        // For string templates, preserve empty arrays but convert undefined to empty string
+        return Array.isArray(result) ? result : (result ?? "");
+      } else if (Array.isArray(template)) {
         const results = template.map(processTemplate);
-        output[outputField] = results.reduce((acc: unknown[], result) => {
+        return results.reduce((acc: unknown[], result) => {
           if (result === undefined || result === "") {
             return acc;
           }
@@ -85,11 +100,23 @@ export default class ObjectTransformer
           }
           return acc;
         }, []);
-      } else {
-        const result = processTemplate(template);
-        // For non-array templates, preserve empty arrays but convert undefined to empty string
-        output[outputField] = Array.isArray(result) ? result : (result ?? "");
+      } else if (typeof template === "object" && template !== null) {
+        // Handle nested object
+        const nestedOutput: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(template)) {
+          nestedOutput[key] = processMapping(value as any, inputData);
+        }
+        return nestedOutput;
       }
+
+      return template;
+    };
+
+    // Process each top-level mapping
+    for (const [outputField, template] of Object.entries(
+      this.config.mappings,
+    )) {
+      output[outputField] = processMapping(template, input);
     }
 
     return output;
