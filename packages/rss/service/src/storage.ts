@@ -117,7 +117,7 @@ const initializeRedis = async () => {
     // Use IoRedis for Docker/Railway environment
     console.log("Using IoRedis for Docker/Railway environment");
     const { default: Redis } = await import("ioredis");
-    
+
     try {
       // Railway provides REDIS_URL when services are linked
       if (process.env.REDIS_URL) {
@@ -131,13 +131,13 @@ const initializeRedis = async () => {
           },
         });
       }
-      
+
       // For Docker Compose environments
       if (process.env.REDIS_HOST) {
         const host = process.env.REDIS_HOST;
         const port = parseInt(process.env.REDIS_PORT || "6379");
         console.log(`Connecting to Redis at ${host}:${port}`);
-        
+
         // @ts-ignore
         return new Redis({
           host,
@@ -149,9 +149,11 @@ const initializeRedis = async () => {
           },
         });
       }
-      
+
       // Last resort fallback - not recommended for production
-      console.warn("No Redis configuration found, falling back to localhost (not recommended for production)");
+      console.warn(
+        "No Redis configuration found, falling back to localhost (not recommended for production)",
+      );
       // @ts-ignore
       return new Redis({
         host: "localhost",
