@@ -115,13 +115,11 @@ export default class RssPlugin
     }
 
     // Store only essential configuration
-    // Parse and normalize the service URL (enforce HTTPS and remove trailing slash)
+    // Parse and normalize the service URL (remove trailing slash)
     try {
       const url = new URL(config.serviceUrl);
-      // Enforce HTTPS
-      url.protocol = "https:";
       // Remove trailing slash from pathname if present
-      if (url.pathname.endsWith("/") && url.pathname.length > 1) {
+      if (url.pathname.endsWith("/")) {
         url.pathname = url.pathname.slice(0, -1);
       }
       this.serviceUrl = url.toString();
