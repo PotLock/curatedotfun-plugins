@@ -9,11 +9,14 @@ import { sanitize } from "./utils.js";
  * Health check endpoint
  */
 export async function handleHealth(c: Context): Promise<Response> {
-  return c.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    service: "rss-service"
-  }, 200);
+  return c.json(
+    {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      service: "rss-service",
+    },
+    200,
+  );
 }
 
 /**

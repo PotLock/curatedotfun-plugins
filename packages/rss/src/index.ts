@@ -248,7 +248,10 @@ export default class RssPlugin
       // Convert Date objects to ISO strings to ensure proper JSON serialization
       const serializedItem = {
         ...item,
-        published: item.published instanceof Date ? item.published.toISOString() : item.published,
+        published:
+          item.published instanceof Date
+            ? item.published.toISOString()
+            : item.published,
         date: item.date instanceof Date ? item.date.toISOString() : item.date,
       };
 
