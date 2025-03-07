@@ -132,7 +132,7 @@ export default class RssPlugin
 
     // Check if service is running with a health check
     try {
-      const healthCheckResponse = await fetch(`${this.serviceUrl}/`, {
+      const healthCheckResponse = await fetch(`${this.serviceUrl}/health`, {
         method: "GET",
       });
 
@@ -245,6 +245,16 @@ export default class RssPlugin
     }
 
     try {
+      // Convert Date objects to ISO strings to ensure proper JSON serialization
+      const serializedItem = {
+        ...item,
+        published:
+          item.published instanceof Date
+            ? item.published.toISOString()
+            : item.published,
+        date: item.date instanceof Date ? item.date.toISOString() : item.date,
+      };
+
       const response = await fetch(`${this.serviceUrl}/api/items`, {
         method: "POST",
         headers: {
@@ -253,7 +263,7 @@ export default class RssPlugin
             ? { Authorization: `Bearer ${this.apiSecret}` }
             : {}),
         },
-        body: JSON.stringify(item),
+        body: JSON.stringify(serializedItem),
       });
 
       if (!response.ok) {
