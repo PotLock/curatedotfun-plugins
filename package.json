@@ -5,14 +5,18 @@
   "packageManager": "bun@1.0.27",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "docs"
   ],
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
     "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",
-    "fmt:check": "prettier --check '**/*.{js,jsx,ts,tsx,json}'"
+    "fmt:check": "prettier --check '**/*.{js,jsx,ts,tsx,json}'",
+    "docs": "cd docs && npx docusaurus start",
+    "docs:build": "cd docs && npx docusaurus build",
+    "docs:serve": "cd docs && npx docusaurus serve"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
