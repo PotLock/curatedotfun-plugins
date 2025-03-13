@@ -89,6 +89,6 @@ export function setFeedConfig(config: FeedConfig): void {
 
 // Get the current feed configuration
 export const getFeedConfig = (): FeedConfig => {
-  // Return the current configuration if available, otherwise use the default
-  return currentConfig || DEFAULT_CONFIG;
+  const config = currentConfig || DEFAULT_CONFIG;
+  return JSON.parse(JSON.stringify(config)) as FeedConfig;
 };

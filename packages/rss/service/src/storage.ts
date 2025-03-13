@@ -239,7 +239,7 @@ export async function initializeFeed(): Promise<void> {
       if (feedData) {
         try {
           const parsedData = JSON.parse(feedData);
-          if (parsedData && parsedData.feedConfig) {
+          if (parsedData?.feedConfig) {
             setFeedConfig(parsedData.feedConfig);
             console.log("Loaded feed configuration from Redis");
           } else {
