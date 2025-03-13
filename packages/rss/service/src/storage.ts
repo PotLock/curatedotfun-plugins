@@ -237,10 +237,22 @@ export async function initializeFeed(): Promise<void> {
     try {
       const feedData = await redis.get(`feed:${DEFAULT_FEED_ID}`);
       if (feedData) {
-        const parsedData = JSON.parse(feedData);
-        if (parsedData.feedConfig) {
-          setFeedConfig(parsedData.feedConfig);
-          console.log("Loaded feed configuration from Redis");
+        try {
+          const parsedData = JSON.parse(feedData);
+          if (parsedData && parsedData.feedConfig) {
+            setFeedConfig(parsedData.feedConfig);
+            console.log("Loaded feed configuration from Redis");
+          } else {
+            console.warn(
+              "Invalid feed configuration format in Redis, using default",
+            );
+          }
+        } catch (parseError) {
+          console.warn(
+            "Error parsing feed configuration from Redis:",
+            parseError,
+          );
+          console.warn("Using default configuration instead");
         }
       }
     } catch (error) {
@@ -257,15 +269,38 @@ export async function saveFeedConfig(config: FeedConfig): Promise<void> {
     // Update the feed configuration in Redis
     const exists = await redis.exists(`feed:${DEFAULT_FEED_ID}`);
     if (exists) {
-      // Get existing data
-      const feedData = await redis.get(`feed:${DEFAULT_FEED_ID}`);
-      const parsedData = JSON.parse(feedData);
+      try {
+        // Get existing data
+        const feedData = await redis.get(`feed:${DEFAULT_FEED_ID}`);
+        let parsedData;
 
-      // Update the configuration
-      parsedData.feedConfig = config;
+        try {
+          parsedData = JSON.parse(feedData);
+        } catch (parseError) {
+          console.warn(
+            "Error parsing existing feed data, creating new data structure",
+          );
+          parsedData = {};
+        }
 
-      // Save back to Redis
-      await redis.set(`feed:${DEFAULT_FEED_ID}`, JSON.stringify(parsedData));
+        // Update the configuration
+        parsedData.feedConfig = config;
+
+        // Save back to Redis
+        await redis.set(`feed:${DEFAULT_FEED_ID}`, JSON.stringify(parsedData));
+      } catch (redisError) {
+        // If there's an error with the existing data, create a new entry
+        console.warn(
+          "Error with existing Redis data, creating new entry:",
+          redisError,
+        );
+        await redis.set(
+          `feed:${DEFAULT_FEED_ID}`,
+          JSON.stringify({
+            feedConfig: config,
+          }),
+        );
+      }
     } else {
       // Create new feed entry
       await redis.set(

@@ -9,6 +9,7 @@ import {
   setPluginRegistry,
 } from "./plugin-service/plugin-registry";
 import { hydrateConfigValues } from "./utils";
+import { merge } from "lodash";
 
 async function main() {
   const app = express();
@@ -105,10 +106,7 @@ async function main() {
       newResult !== null &&
       !Array.isArray(newResult)
     ) {
-      return {
-        ...(prevResult as Record<string, unknown>),
-        ...(newResult as Record<string, unknown>),
-      };
+      return merge({}, prevResult, newResult);
     }
 
     // Otherwise return the new result (string will just return)

@@ -73,7 +73,13 @@ export function setFeedConfig(config: FeedConfig): void {
   config.title = config.title || DEFAULT_CONFIG.title;
   config.description = config.description || DEFAULT_CONFIG.description;
   config.siteUrl = config.siteUrl || DEFAULT_CONFIG.siteUrl;
-  config.maxItems = config.maxItems || DEFAULT_CONFIG.maxItems;
+
+  // Ensure maxItems is always a positive number
+  config.maxItems =
+    typeof config.maxItems === "number" && config.maxItems > 0
+      ? config.maxItems
+      : DEFAULT_CONFIG.maxItems;
+
   config.language = config.language || DEFAULT_CONFIG.language;
 
   // Update the in-memory configuration
