@@ -435,7 +435,7 @@ async function transformContent() {
 
     const result = await response.json();
     const transformedContent = result.output;
-    
+
     // Format the output for display
     contentEditor.value =
       typeof transformedContent === "object"

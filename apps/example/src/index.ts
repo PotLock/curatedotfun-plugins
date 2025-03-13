@@ -132,21 +132,26 @@ async function main() {
         const hydratedConfig = hydrateConfigValues(transform.config);
 
         // Load and configure transform plugin
-        const plugin = await pluginService.getPlugin<"transformer">(transform.plugin, {
-          type: "transformer",
-          config: hydratedConfig,
-        });
+        const plugin = await pluginService.getPlugin<"transformer">(
+          transform.plugin,
+          {
+            type: "transformer",
+            config: hydratedConfig,
+          },
+        );
 
-        console.log(`Applying ${stage} transform #${i + 1} (${transform.plugin})`);
-        const transformResult = await plugin.transform({ 
+        console.log(
+          `Applying ${stage} transform #${i + 1} (${transform.plugin})`,
+        );
+        const transformResult = await plugin.transform({
           input: result,
-          config: hydratedConfig
+          config: hydratedConfig,
         });
 
         // Validate transform output
         if (transformResult === undefined || transformResult === null) {
           throw new Error(
-            `Transform ${transform.plugin} returned null or undefined`
+            `Transform ${transform.plugin} returned null or undefined`,
           );
         }
 
@@ -157,7 +162,7 @@ async function main() {
         throw new Error(
           `Transform failed at ${stage} stage, plugin ${transform.plugin}, index ${i}: ${
             error instanceof Error ? error.message : "Unknown error"
-          }`
+          }`,
         );
       }
     }

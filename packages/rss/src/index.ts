@@ -11,41 +11,51 @@ interface RssInput {
   guid?: string;
 
   // Author information
-  author?: {
-    name: string;
-    email?: string;
-    link?: string;
-  } | Array<{
-    name: string;
-    email?: string;
-    link?: string;
-  }>;
+  author?:
+    | {
+        name: string;
+        email?: string;
+        link?: string;
+      }
+    | Array<{
+        name: string;
+        email?: string;
+        link?: string;
+      }>;
 
   // Media and categorization
-  image?: string | {
-    url: string;
-    type?: string;
-    length?: number;
-  };
-  audio?: string | {
-    url: string;
-    type?: string;
-    length?: number;
-  };
-  video?: string | {
-    url: string;
-    type?: string;
-    length?: number;
-  };
+  image?:
+    | string
+    | {
+        url: string;
+        type?: string;
+        length?: number;
+      };
+  audio?:
+    | string
+    | {
+        url: string;
+        type?: string;
+        length?: number;
+      };
+  video?:
+    | string
+    | {
+        url: string;
+        type?: string;
+        length?: number;
+      };
   enclosure?: {
     url: string;
     type?: string;
     length?: number;
   };
-  categories?: string[] | Array<{
-    name: string;
-    domain?: string;
-  }>;
+  categories?:
+    | string[]
+    | Array<{
+        name: string;
+        domain?: string;
+      }>;
 
   // Additional metadata
   copyright?: string;
@@ -56,7 +66,9 @@ interface RssInput {
   isPermaLink?: boolean;
 }
 
-export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig> {
+export default class RssPlugin
+  implements DistributorPlugin<RssInput, RssConfig>
+{
   readonly type = "distributor" as const;
 
   private serviceUrl?: string;
@@ -99,10 +111,38 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
         console.warn(
           `Warning: RSS service health check returned status ${healthCheckResponse.status}`,
         );
-        throw new Error(`RSS service health check failed, tried: ${this.serviceUrl}/health`)
+        throw new Error(
+          `RSS service health check failed, tried: ${this.serviceUrl}/health`,
+        );
+      }
+
+      // If feed configuration is provided, update it on the service
+      if (config.feedConfig) {
+        if (!config.feedConfig.siteUrl)
+          config.feedConfig.siteUrl = this.serviceUrl;
+        const updateConfigResponse = await fetch(
+          `${this.serviceUrl}/api/config`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${this.apiSecret}`,
+            },
+            body: JSON.stringify(config.feedConfig),
+          },
+        );
+
+        if (!updateConfigResponse.ok) {
+          const errorData = await updateConfigResponse.json();
+          console.warn(
+            `Warning: Failed to update RSS feed configuration: ${errorData.error || updateConfigResponse.statusText}`,
+          );
+        } else {
+          console.log("Successfully updated RSS feed configuration");
+        }
       }
     } catch (error) {
-      console.error("Error checking RSS service:", error);
+      console.error("Error initializing RSS service:", error);
       throw new Error(`Failed to initialize RSS feed: ${error}`);
     }
   }
@@ -117,7 +157,9 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(this.apiSecret ? { Authorization: `Bearer ${this.apiSecret}` } : {}),
+          ...(this.apiSecret
+            ? { Authorization: `Bearer ${this.apiSecret}` }
+            : {}),
         },
         body: JSON.stringify(input),
       });
@@ -128,7 +170,7 @@ export default class RssPlugin implements DistributorPlugin<RssInput, RssConfig>
           `Failed to save item to RSS service: ${errorData.error || response.statusText}`,
         );
       }
-      
+
       console.log("Successfully saved RSS item");
     } catch (error) {
       console.error("Error saving item to RSS service:", error);

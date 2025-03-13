@@ -1,8 +1,9 @@
 import { Context } from "hono";
 import { v4 as uuidv4 } from "uuid";
 import { formatItems, generateFeed } from "./formatters.js";
-import { addItem, getItems } from "./storage.js";
-import { ApiFormat, RssItem } from "./types.js";
+import { getFeedConfig, setFeedConfig } from "./config.js";
+import { addItem, getItems, saveFeedConfig } from "./storage.js";
+import { ApiFormat, FeedConfig, RssItem } from "./types.js";
 import { sanitize } from "./utils.js";
 
 /**
@@ -67,6 +68,53 @@ export async function handleRawJson(): Promise<Response> {
 }
 
 /**
+ * Update feed configuration
+ */
+export async function handleUpdateConfig(c: Context): Promise<Response> {
+  let inputConfig: any;
+  try {
+    inputConfig = await c.req.json();
+  } catch (error) {
+    return c.json(
+      {
+        error: "Invalid JSON",
+        message: "The request body must be valid JSON",
+      },
+      400,
+    );
+  }
+
+  try {
+    // Update the configuration
+    setFeedConfig(inputConfig as FeedConfig);
+
+    // Save to Redis
+    await saveFeedConfig(getFeedConfig());
+
+    return c.json({
+      message: "Feed configuration updated successfully",
+      config: getFeedConfig(),
+    });
+  } catch (error) {
+    console.error("Failed to update feed configuration:", error);
+    return c.json(
+      {
+        error: "Configuration Error",
+        message: `Failed to update feed configuration: ${error}`,
+      },
+      500,
+    );
+  }
+}
+
+/**
+ * Get current feed configuration
+ */
+export async function handleGetConfig(c: Context): Promise<Response> {
+  return c.json(getFeedConfig());
+}
+
+/**
  * Get all items with format options
  */
 export async function handleGetItems(c: Context): Promise<Response> {
@@ -117,7 +165,8 @@ export async function handleAddItem(c: Context): Promise<Response> {
     return c.json(
       {
         error: "Missing required field: content or description",
-        message: "Either content or description field is required for RSS items",
+        message:
+          "Either content or description field is required for RSS items",
       },
       400,
     );
@@ -152,7 +201,9 @@ export async function handleAddItem(c: Context): Promise<Response> {
   // Handle author conversion if needed
   let author;
   if (inputItem.author) {
-    author = Array.isArray(inputItem.author) ? inputItem.author : [inputItem.author];
+    author = Array.isArray(inputItem.author)
+      ? inputItem.author
+      : [inputItem.author];
   }
 
   // Create a complete RssItem with all required fields and sanitized content
@@ -172,22 +223,27 @@ export async function handleAddItem(c: Context): Promise<Response> {
     // Optional fields
     ...(author && { author }),
     ...(category && { category }),
-    
+
     // Media fields
     ...(inputItem.image && {
-      image: typeof inputItem.image === "string" ? inputItem.image : inputItem.image,
+      image:
+        typeof inputItem.image === "string" ? inputItem.image : inputItem.image,
     }),
     ...(inputItem.audio && {
-      audio: typeof inputItem.audio === "string" ? inputItem.audio : inputItem.audio,
+      audio:
+        typeof inputItem.audio === "string" ? inputItem.audio : inputItem.audio,
     }),
     ...(inputItem.video && {
-      video: typeof inputItem.video === "string" ? inputItem.video : inputItem.video,
+      video:
+        typeof inputItem.video === "string" ? inputItem.video : inputItem.video,
     }),
     ...(inputItem.enclosure && { enclosure: inputItem.enclosure }),
-    
+
     // Additional metadata
     ...(inputItem.source && { source: inputItem.source }),
-    ...(inputItem.isPermaLink !== undefined && { isPermaLink: inputItem.isPermaLink }),
+    ...(inputItem.isPermaLink !== undefined && {
+      isPermaLink: inputItem.isPermaLink,
+    }),
     ...(inputItem.copyright && { copyright: inputItem.copyright }),
   };
 
