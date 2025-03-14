@@ -9,6 +9,7 @@ import {
   setPluginRegistry,
 } from "./plugin-service/plugin-registry";
 import { hydrateConfigValues } from "./utils";
+import { merge } from "lodash";
 
 async function main() {
   const app = express();
@@ -92,26 +93,96 @@ async function main() {
     }
   });
 
+  /**
+   * Combines transform results, merging objects or returning the new result
+   */
+  function combineResults(prevResult: unknown, newResult: unknown): unknown {
+    // If both are objects (not arrays), merge them with new values taking precedence
+    if (
+      typeof prevResult === "object" &&
+      prevResult !== null &&
+      !Array.isArray(prevResult) &&
+      typeof newResult === "object" &&
+      newResult !== null &&
+      !Array.isArray(newResult)
+    ) {
+      return merge({}, prevResult, newResult);
+    }
+
+    // Otherwise return the new result (string will just return)
+    return newResult;
+  }
+
+  /**
+   * Apply a series of transformations to content
+   */
+  async function applyTransforms(
+    content: any,
+    transforms: Array<{ plugin: string; config: any }> = [],
+    stage: string = "global",
+  ) {
+    let result = content;
+
+    for (let i = 0; i < transforms.length; i++) {
+      const transform = transforms[i];
+      try {
+        // Hydrate config with environment variables
+        const hydratedConfig = hydrateConfigValues(transform.config);
+
+        // Load and configure transform plugin
+        const plugin = await pluginService.getPlugin<"transformer">(
+          transform.plugin,
+          {
+            type: "transformer",
+            config: hydratedConfig,
+          },
+        );
+
+        console.log(
+          `Applying ${stage} transform #${i + 1} (${transform.plugin})`,
+        );
+        const transformResult = await plugin.transform({
+          input: result,
+          config: hydratedConfig,
+        });
+
+        // Validate transform output
+        if (transformResult === undefined || transformResult === null) {
+          throw new Error(
+            `Transform ${transform.plugin} returned null or undefined`,
+          );
+        }
+
+        // Combine results, either merging objects or using new result
+        result = combineResults(result, transformResult);
+      } catch (error) {
+        console.error(`Transform error (${transform.plugin}):`, error);
+        throw new Error(
+          `Transform failed at ${stage} stage, plugin ${transform.plugin}, index ${i}: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        );
+      }
+    }
+
+    return result;
+  }
+
   // Transform endpoint
   app.post("/api/transform", async (req, res) => {
     try {
-      const { plugin: pluginName, config: pluginConfig, content } = req.body;
+      const { transform, content } = req.body;
 
       if (!content) {
         throw new Error("No content provided for transformation");
       }
 
-      // Hydrate config with environment variables
-      const hydratedConfig = hydrateConfigValues(pluginConfig);
+      if (!Array.isArray(transform) || transform.length === 0) {
+        throw new Error("No transforms specified");
+      }
 
-      // Load and configure transform plugin
-      const plugin = await pluginService.getPlugin<"transformer">(pluginName, {
-        type: "transformer",
-        config: hydratedConfig,
-      });
-
-      // Transform content
-      const result = await plugin.transform({ input: content });
+      // Apply all transforms in sequence
+      const result = await applyTransforms(content, transform);
       res.json({ success: true, output: result });
     } catch (error) {
       const errorMessage =

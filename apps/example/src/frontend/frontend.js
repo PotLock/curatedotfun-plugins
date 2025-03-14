@@ -403,51 +403,44 @@ async function transformContent() {
       throw new Error("No transform plugins configured");
     }
 
-    let currentContent = content;
-    updateTransformStatus("Starting transformations...", "info");
-
-    for (const [index, transformConfig] of config.transform.entries()) {
-      updateTransformStatus(
-        `Transforming with ${transformConfig.plugin} (${index + 1}/${config.transform.length})...`,
-        "info",
-      );
-
-      // Try to parse current content as JSON if it's a string that looks like JSON
-      let parsedContent = currentContent;
-      if (typeof currentContent === "string") {
-        try {
-          parsedContent = JSON.parse(currentContent);
-        } catch (e) {
-          // Not JSON, use as-is
-          parsedContent = { content: currentContent };
-        }
+    // Try to parse content as JSON if it's a string that looks like JSON
+    let parsedContent = content;
+    if (typeof content === "string") {
+      try {
+        parsedContent = JSON.parse(content);
+      } catch (e) {
+        // Not JSON, use as-is
+        parsedContent = { content };
       }
-
-      const response = await fetch("/api/transform", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          plugin: transformConfig.plugin,
-          config: transformConfig.config,
-          content: parsedContent,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Transform failed");
-      }
-
-      const result = await response.json();
-      currentContent = result.output;
-      // Format the output for display
-      contentEditor.value =
-        typeof currentContent === "object"
-          ? JSON.stringify(currentContent, null, 2)
-          : currentContent;
     }
+
+    updateTransformStatus("Applying transformations...", "info");
+
+    // Send all transforms at once
+    const response = await fetch("/api/transform", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transform: config.transform,
+        content: parsedContent,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Transform failed");
+    }
+
+    const result = await response.json();
+    const transformedContent = result.output;
+
+    // Format the output for display
+    contentEditor.value =
+      typeof transformedContent === "object"
+        ? JSON.stringify(transformedContent, null, 2)
+        : transformedContent;
 
     updateTransformStatus(
       "All transformations completed successfully",

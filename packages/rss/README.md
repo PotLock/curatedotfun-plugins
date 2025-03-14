@@ -70,10 +70,41 @@ Full configuration options for the RSS plugin:
   "plugin": "@curatedotfun/rss",
   "config": {
     "serviceUrl": "https://your-rss-service-url.com", // URL of your deployed RSS service
-    "apiSecret": "{API_SECRET}" // Automatically injected from environment
+    "apiSecret": "{API_SECRET}", // Automatically injected from environment
+    "feedConfig": { // Optional feed configuration
+      "title": "My Custom RSS Feed",
+      "description": "A feed of curated content",
+      "siteUrl": "https://example.com",
+      "language": "en",
+      "copyright": "© 2025",
+      "maxItems": 50,
+      "image": "https://example.com/logo.png",
+      "author": {
+        "name": "Feed Author",
+        "email": "author@example.com",
+        "link": "https://author.example.com"
+      }
+    }
   }
 }
 ```
+
+### Feed Configuration
+
+The `feedConfig` property allows you to customize your RSS feed's metadata during plugin initialization. This configuration is sent to the RSS service to be available when feed data is queried.
+
+Key configuration options:
+
+- **title**: The title of your RSS feed
+- **description**: A brief description of your feed's content
+- **siteUrl**: The URL of your website (used for feed links)
+- **language**: The language code for your feed (e.g., "en", "es", "fr")
+- **copyright**: Copyright notice for your feed content
+- **maxItems**: Maximum number of items to keep in the feed (older items are removed)
+- **image**: URL to an image representing your feed
+- **author**: Information about the feed author (name, email, link)
+
+If you don't provide a `feedConfig`, the RSS service will use default values.
 
 ## 🔄 Data Transformation
 
