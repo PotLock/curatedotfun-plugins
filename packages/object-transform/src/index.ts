@@ -1,10 +1,37 @@
 import Mustache from "mustache";
 import { z } from "zod";
+import { format } from "date-fns";
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 
 // Disable HTML escaping in Mustache
 Mustache.escape = function (text) {
   return text;
+};
+
+// Default template generators
+type TemplateGenerator = (formatStr?: string) => string | number;
+
+const defaultTemplates: Record<string, TemplateGenerator> = {
+  timestamp: () => {
+    // Explicitly return a number
+    return Number(Date.now());
+  },
+  date: (formatStr = "yyyy-MM-dd") => {
+    try {
+      return format(new Date(), formatStr || "yyyy-MM-dd");
+    } catch (error) {
+      console.error(`Error formatting date with format "${formatStr}":`, error);
+      return format(new Date(), "yyyy-MM-dd");
+    }
+  },
+  time: (formatStr = "HH:mm:ss") => {
+    try {
+      return format(new Date(), formatStr || "HH:mm:ss");
+    } catch (error) {
+      console.error(`Error formatting time with format "${formatStr}":`, error);
+      return format(new Date(), "HH:mm:ss");
+    }
+  },
 };
 
 // Schema for the configuration
@@ -44,6 +71,8 @@ export default class ObjectTransformer
       throw new Error("Object transformer not initialized");
     }
 
+    // Inject default templates into input data
+    const enhancedInput = this.injectDefaultTemplates(input);
     const output: Record<string, unknown> = {};
 
     // Recursive function to process mappings, including nested objects
@@ -116,10 +145,84 @@ export default class ObjectTransformer
     for (const [outputField, template] of Object.entries(
       this.config.mappings,
     )) {
-      output[outputField] = processMapping(template, input);
+      output[outputField] = processMapping(template, enhancedInput);
     }
 
     return output;
+  }
+
+  // Inject default templates into input data
+  private injectDefaultTemplates(
+    input: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const result = { ...input };
+
+    // Find all template patterns in the mappings
+    const templatePatterns: Map<string, string> = new Map();
+
+    const findTemplates = (value: any) => {
+      if (typeof value === "string") {
+        // Extract all {{template}} or {{template:format}} patterns
+        const matches = value.match(/\{\{([^}]+)\}\}/g);
+        if (matches) {
+          matches.forEach((match) => {
+            const templateContent = match.substring(2, match.length - 2);
+            // Store the full template content
+            templatePatterns.set(
+              templateContent.toLowerCase(),
+              templateContent,
+            );
+          });
+        }
+      } else if (Array.isArray(value)) {
+        value.forEach((item) => findTemplates(item));
+      } else if (typeof value === "object" && value !== null) {
+        Object.values(value).forEach((item) => findTemplates(item));
+      }
+    };
+
+    // Find all templates used in mappings
+    findTemplates(this.config?.mappings);
+
+    // Process each template pattern
+    templatePatterns.forEach((originalPattern, lowerCasePattern) => {
+      // Split by colon to handle format specifiers
+      const colonIndex = originalPattern.indexOf(":");
+      const templateName =
+        colonIndex > -1
+          ? originalPattern.substring(0, colonIndex)
+          : originalPattern;
+      const formatStr =
+        colonIndex > -1 ? originalPattern.substring(colonIndex + 1) : undefined;
+
+      const lowerCaseTemplateName = templateName.toLowerCase();
+
+      // Check if this is a default template
+      if (defaultTemplates[lowerCaseTemplateName]) {
+        try {
+          // Generate the value with optional format
+          let value = defaultTemplates[lowerCaseTemplateName](formatStr);
+
+          // Ensure timestamp is a number
+          if (
+            lowerCaseTemplateName === "timestamp" &&
+            typeof value === "string"
+          ) {
+            value = Number(value);
+          }
+
+          // Store the value using the original template name (preserving case)
+          result[templateName] = value;
+        } catch (error) {
+          console.error(
+            `Error generating value for template "${templateName}":`,
+            error,
+          );
+        }
+      }
+    });
+
+    return result;
   }
 
   async shutdown(): Promise<void> {

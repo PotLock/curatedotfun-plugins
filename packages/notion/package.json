@@ -1,6 +1,6 @@
 {
   "name": "@curatedotfun/notion",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Notion plugin for curatedotfun",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -34,7 +34,8 @@
   "scripts": {
     "build": "rspack build && tsc -p tsconfig.build.json",
     "dev": "rspack serve",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15"
@@ -43,6 +44,7 @@
     "@curatedotfun/types": "workspace:*",
     "@curatedotfun/utils": "workspace:*",
     "@rspack/cli": "latest",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.7"
   }
 }
