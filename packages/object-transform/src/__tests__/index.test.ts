@@ -224,12 +224,7 @@ describe("ObjectTransformer", () => {
       });
 
       const result = await transformer.transform({ input: {} });
-
-      // Log the actual result for debugging
-      console.log("Timestamp result:", result);
-      console.log("Type of timestamp:", typeof result.created);
-
-      // For now, just check that we have a created field
+      expect(Number(result.created)).toEqual(FIXED_DATE.getTime());
       expect(result).toHaveProperty("created");
     });
 
@@ -272,11 +267,6 @@ describe("ObjectTransformer", () => {
 
       const result = await transformer.transform({ input: {} });
 
-      // Log the actual result for debugging
-      console.log("Custom date format result:", result);
-      console.log("Expected format:", format(FIXED_DATE, "MMMM do, yyyy"));
-
-      // For now, just check that we have a created field
       expect(result).toHaveProperty("created");
     });
 

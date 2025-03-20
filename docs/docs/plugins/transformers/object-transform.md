@@ -146,7 +146,7 @@ You can also customize the date and time formats:
 }
 ```
 
-The format strings follow the [date-fns format](https://date-fns.org/v2.29.3/docs/format) pattern.
+The format strings follow the [date-fns format](https://date-fns.org/v4.1.0/docs/format) pattern.
 
 Default templates are case-insensitive, so `{{TIMESTAMP}}`, `{{Timestamp}}`, and `{{timestamp}}` all work the same way.
 
