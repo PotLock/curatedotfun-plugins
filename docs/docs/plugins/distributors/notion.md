@@ -28,18 +28,10 @@ The Notion plugin works seamlessly with the Object Transform plugin to map your 
     "plugin": "@curatedotfun/object-transform",
     "config": {
       "mappings": {
-        "Title": {
-          "template": "{{title}} by {{author}}"
-        },
-        "URL": {
-          "field": "url"
-        },
-        "Tags": {
-          "field": "categories"
-        },
-        "Published": {
-          "field": "publishDate"
-        }
+        "title": "{{title}} by {{author}}",
+        "url": "{{source}}",
+        "tags": "[{{categories}}]",
+        "published": "{{createdAt}}"
       }
     }
   },
@@ -48,14 +40,20 @@ The Notion plugin works seamlessly with the Object Transform plugin to map your 
       "plugin": "@curatedotfun/notion",
       "config": {
         "token": "your_integration_token",
-        "databaseId": "your_database_id"
+        "databaseId": "your_database_id",
+        "fields": {
+          "title": "title",
+          "url": "url",
+          "tags": "multi_select",
+          "published": "date"
+        }
       }
     }
   ]
 }
 ```
 
-The Notion plugin will automatically format each property based on its value type:
+By default, the Notion plugin will automatically format each property based on its value type:
 
 - **Strings** → Rich Text
 - **Dates** (or date strings) → Date
@@ -63,6 +61,8 @@ The Notion plugin will automatically format each property based on its value typ
 - **Booleans** → Checkbox
 - **Arrays** → Multi-select
 - **Other types** → Rich Text (converted to string)
+
+Although you should explicitly specify the field types using the `fields` configuration option (see below).
 
 :::tip
 Design your database schema to match your transformed object structure. The plugin will create pages with properties matching your object's field names.
@@ -74,13 +74,47 @@ You need to specify:
 
 - `token`: Notion Internal Integration Token
 - `databaseId`: Your database ID extracted from the URL
+- `fields`: A mapping of field names to Notion property types
 
 ```json
 {
   "plugin": "@curatedotfun/notion",
   "config": {
     "token": "secret_...", // Your Notion integration token
-    "databaseId": "..." // Your Notion database ID
+    "databaseId": "...", // Your Notion database ID
+    "fields": {
+      "title": "title",
+      "description": "rich_text",
+      "date": "date",
+      "count": "number",
+      "isPublished": "checkbox",
+      "tags": "multi_select",
+      "category": "select",
+      "website": "url",
+      "email": "email",
+      "phone": "phone"
+    }
   }
 }
 ```
+
+### Supported Property Types
+
+The `fields` configuration allows you to explicitly specify how each field should be formatted in Notion. This gives you precise control over the data types and ensures your content is properly formatted in your Notion database.
+
+For more information about Notion database properties, see the [Notion Database Properties documentation](https://www.notion.com/help/database-properties).
+
+The following property types are supported:
+
+| Property Type | Description |
+|---------------|-------------|
+| `title` | The main title of the page. Each page requires exactly one title property. |
+| `rich_text` | Formatted text content that can include styling. |
+| `date` | A date or date range value. |
+| `number` | A numeric value. |
+| `checkbox` | A boolean (true/false) value. |
+| `multi_select` | Multiple tags or categories from a predefined list. |
+| `select` | A single option from a predefined list. |
+| `url` | A web address link. |
+| `email` | An email address. |
+| `phone` | A phone number. |

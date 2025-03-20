@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import ObjectTransformer from "../index";
+import { format } from "date-fns";
 
 describe("ObjectTransformer", () => {
   let transformer: ObjectTransformer;
@@ -199,6 +200,171 @@ describe("ObjectTransformer", () => {
         url: "https://twitter.com/testhandle/status/123456789",
         title: "twitter",
       },
+    });
+  });
+
+  describe("Default Templates", () => {
+    const FIXED_DATE = new Date("2021-03-19T12:00:00Z");
+
+    beforeEach(() => {
+      // Use vi.useFakeTimers to mock the date
+      vi.useFakeTimers();
+      vi.setSystemTime(FIXED_DATE);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("should handle timestamp template", async () => {
+      await transformer.initialize({
+        mappings: {
+          created: "{{timestamp}}",
+        },
+      });
+
+      const result = await transformer.transform({ input: {} });
+      expect(Number(result.created)).toEqual(FIXED_DATE.getTime());
+      expect(result).toHaveProperty("created");
+    });
+
+    it("should handle date template with default format", async () => {
+      await transformer.initialize({
+        mappings: {
+          created: "{{date}}",
+        },
+      });
+
+      const result = await transformer.transform({ input: {} });
+      const expectedDate = format(FIXED_DATE, "yyyy-MM-dd");
+
+      expect(result).toEqual({
+        created: expectedDate,
+      });
+    });
+
+    it("should handle time template with default format", async () => {
+      await transformer.initialize({
+        mappings: {
+          created: "{{time}}",
+        },
+      });
+
+      const result = await transformer.transform({ input: {} });
+      const expectedTime = format(FIXED_DATE, "HH:mm:ss");
+
+      expect(result).toEqual({
+        created: expectedTime,
+      });
+    });
+
+    it("should handle custom date format", async () => {
+      await transformer.initialize({
+        mappings: {
+          created: "{{date:MMMM do, yyyy}}",
+        },
+      });
+
+      const result = await transformer.transform({ input: {} });
+
+      expect(result).toHaveProperty("created");
+    });
+
+    it("should handle case-insensitive template names", async () => {
+      await transformer.initialize({
+        mappings: {
+          timestamp: "{{TIMESTAMP}}",
+          date: "{{Date}}",
+          time: "{{TIME}}",
+        },
+      });
+
+      const result = await transformer.transform({ input: {} });
+      const expectedDate = format(FIXED_DATE, "yyyy-MM-dd");
+      const expectedTime = format(FIXED_DATE, "HH:mm:ss");
+
+      // Convert timestamp to number for comparison
+      const parsedResult = {
+        ...(result as Record<string, unknown>),
+        timestamp: Number(result.timestamp as string),
+      };
+
+      expect(parsedResult).toEqual({
+        timestamp: FIXED_DATE.getTime(),
+        date: expectedDate,
+        time: expectedTime,
+      });
+    });
+
+    it("should handle templates in nested objects and arrays", async () => {
+      await transformer.initialize({
+        mappings: {
+          metadata: {
+            created: "{{timestamp}}",
+            formatted: {
+              date: "{{date}}",
+              time: "{{time}}",
+            },
+          },
+          tags: ["created:{{date}}", "time:{{time}}"],
+        },
+      });
+
+      const result = await transformer.transform({ input: {} });
+      const expectedDate = format(FIXED_DATE, "yyyy-MM-dd");
+      const expectedTime = format(FIXED_DATE, "HH:mm:ss");
+
+      // Convert timestamp to number for comparison
+      const parsedResult = {
+        ...(result as Record<string, unknown>),
+        metadata: {
+          ...(result.metadata as Record<string, unknown>),
+          created: Number(
+            (result.metadata as Record<string, unknown>).created as string,
+          ),
+        },
+      };
+
+      expect(parsedResult).toEqual({
+        metadata: {
+          created: FIXED_DATE.getTime(),
+          formatted: {
+            date: expectedDate,
+            time: expectedTime,
+          },
+        },
+        tags: [`created:${expectedDate}`, `time:${expectedTime}`],
+      });
+    });
+
+    it("should not override existing input fields with the same name", async () => {
+      await transformer.initialize({
+        mappings: {
+          timestamp: "{{timestamp}}",
+          customTimestamp: "{{timestamp}}",
+          date: "{{date}}",
+        },
+      });
+
+      const result = await transformer.transform({
+        input: {
+          timestamp: "user-provided-timestamp",
+        },
+      });
+      const expectedDate = format(FIXED_DATE, "yyyy-MM-dd");
+
+      // Convert timestamps to numbers for comparison
+      const parsedResult = {
+        ...(result as Record<string, unknown>),
+        timestamp: Number(result.timestamp as string),
+        customTimestamp: Number(result.customTimestamp as string),
+      };
+
+      expect(parsedResult).toEqual({
+        timestamp: FIXED_DATE.getTime(), // Default template takes precedence
+        customTimestamp: FIXED_DATE.getTime(),
+        date: expectedDate,
+      });
     });
   });
 });

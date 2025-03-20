@@ -12,6 +12,7 @@ The Object Transform plugin enables object-to-object mapping using [Mustache](ht
 - **Template-based Field Values**: Use Mustache templates to format each field's value
 - **Flexible Output Structure**: Define any number of output fields with custom names
 - **Array Support**: Handle array fields with direct mapping and array combinations
+- **Default Templates**: Built-in templates for common values like timestamps and formatted dates
 
 ## 📝 Usage
 
@@ -122,7 +123,58 @@ Access nested properties using dot notation:
 }
 ```
 
+### Default Templates
+
+The plugin provides built-in templates that generate values automatically:
+
+| Template | Description | Example Output |
+|----------|-------------|----------------|
+| `{{timestamp}}` | Current timestamp in milliseconds | `1616155200000` |
+| `{{date}}` | Current date in YYYY-MM-DD format | `2025-03-19` |
+| `{{time}}` | Current time in HH:mm:ss format | `21:55:00` |
+
+You can also customize the date and time formats:
+
+```json
+{
+  "mappings": {
+    "created": "{{timestamp}}",
+    "formattedDate": "{{date:yyyy/MM/dd}}",
+    "longDate": "{{date:MMMM do, yyyy}}",
+    "shortTime": "{{time:HH:mm}}"
+  }
+}
+```
+
+The format strings follow the [date-fns format](https://date-fns.org/v4.1.0/docs/format) pattern.
+
+Default templates are case-insensitive, so `{{TIMESTAMP}}`, `{{Timestamp}}`, and `{{timestamp}}` all work the same way.
+
 ## 💡 Examples
+
+### Using Default Templates
+
+```json
+{
+  "transform": {
+    "plugin": "@curatedotfun/object-transform",
+    "config": {
+      "mappings": {
+        "id": "post-{{timestamp}}",
+        "title": "{{title}}",
+        "content": "{{content}}",
+        "metadata": {
+          "createdAt": "{{timestamp}}",
+          "formattedDate": "{{date:MMMM do, yyyy}}",
+          "formattedTime": "{{time}}"
+        }
+      }
+    }
+  }
+}
+```
+
+This will generate an object with a unique ID based on the current timestamp, along with formatted date and time values.
 
 ### Database Entry Transform
 
