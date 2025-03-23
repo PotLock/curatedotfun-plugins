@@ -42,7 +42,7 @@ export default function PluginConfig() {
   return (
     <>
       <div className="flex py-8 px-16 min-h-screen relative gap-14">
-        <div className="flex flex-col gap-5 flex-1 w-full">
+        <div id="config-panel" className="flex flex-col gap-5 flex-1 w-full">
           <h1 className="text-3xl">Plugin Configuration</h1>
           <div className="flex items-center justify-start mt-5 gap-2">
             <Button
