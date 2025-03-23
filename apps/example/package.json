@@ -1,25 +1,16 @@
 {
   "name": "@curatedotfun/example",
   "version": "0.0.1",
+  "private": true,
   "scripts": {
-    "build": "rspack build",
-    "start": "rspack build && node dist/main.js",
-    "dev": "NODE_ENV=development concurrently \"rspack build --watch\" \"wait-on dist/main.js && bun --watch dist/main.js\""
+    "dev": "cd src/frontend && bun run dev",
+    "build": "cd src/frontend && bun run build",
+    "preview": "cd src/frontend && bun run preview"
   },
   "devDependencies": {
     "@curatedotfun/types": "workspace:*",
-    "@rspack/cli": "latest",
     "@types/node": "^20.0.0",
-    "concurrently": "^9.1.2",
     "dotenv": "^16.4.7",
-    "typescript": "^5.0.0",
-    "wait-on": "^8.0.2"
-  },
-  "dependencies": {
-    "@module-federation/node": "^2.6.22",
-    "@types/express": "^5.0.0",
-    "@types/lodash": "^4.17.16",
-    "express": "^4.21.2",
-    "lodash": "^4.17.21"
+    "typescript": "^5.0.0"
   }
 }
