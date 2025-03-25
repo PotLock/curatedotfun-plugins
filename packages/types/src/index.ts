@@ -1,4 +1,4 @@
-export type PluginType = "transformer" | "distributor";
+export type PluginType = "transformer" | "distributor" | "source";
 
 // Base plugin interface
 export interface BotPlugin<
@@ -25,6 +25,14 @@ export interface DistributorPlugin<
 > extends BotPlugin<TConfig> {
   type: "distributor";
   distribute: (args: ActionArgs<TInput, TConfig>) => Promise<void>;
+}
+
+export interface SourcePlugin<
+  TInput = unknown,
+  TConfig extends Record<string, unknown> = Record<string, unknown>,
+> extends BotPlugin<TConfig> {
+  type: "source";
+  collect: (args: ActionArgs<TInput, TConfig>) => Promise<void>;
 }
 
 // Plugin action type (used by all plugins)
@@ -55,6 +63,7 @@ export type PluginTypeMap<
 > = {
   transformer: TransformerPlugin<TInput, TOutput, TConfig>;
   distributor: DistributorPlugin<TInput, TConfig>;
+  source: SourcePlugin<TInput, TConfig>;
 };
 
 // Database operations interface

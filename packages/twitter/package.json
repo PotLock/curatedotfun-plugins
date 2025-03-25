@@ -1,0 +1,48 @@
+{
+  "name": "@curatedotfun/twitter",
+  "version": "0.0.7",
+  "description": "Twitter plugin for curatedotfun",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/potlock/curatedotfun-plugins.git",
+    "directory": "packages/twitter"
+  },
+  "keywords": [
+    "curatedotfun",
+    "twitter",
+    "distribute",
+    "plugin"
+  ],
+  "scripts": {
+    "build": "rspack build && tsc -p tsconfig.build.json",
+    "dev": "rspack serve",
+    "lint": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@curatedotfun/types": "workspace:*",
+    "@curatedotfun/utils": "workspace:*",
+    "@rspack/cli": "latest",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.7"
+  },
+  "dependencies": {}
+}
