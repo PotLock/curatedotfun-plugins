@@ -5,16 +5,13 @@ interface TwitterDistributorConfig {
 }
 
 export default class TwitterDistributorPlugin
-  implements DistributorPlugin<string, TwitterDistributorConfig> {
+  implements DistributorPlugin<string, TwitterDistributorConfig>
+{
   readonly type = "distributor" as const;
 
-  async initialize(config?: TwitterDistributorConfig): Promise<void> {
-
-  }
+  async initialize(config?: TwitterDistributorConfig): Promise<void> {}
 
   async distribute({
     input: content,
-  }: ActionArgs<string, TwitterDistributorConfig>): Promise<void> {
-
-  }
+  }: ActionArgs<string, TwitterDistributorConfig>): Promise<void> {}
 }
