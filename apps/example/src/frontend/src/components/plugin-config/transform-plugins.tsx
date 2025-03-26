@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -12,8 +12,22 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 
-export default function TransformPlugin() {
-  const defaultPlugins = [
+// Define the Plugin type
+type Plugin = {
+  id: number;
+  type: string;
+  content: string;
+};
+
+// Define the ref type for TransformPlugin
+export interface TransformPluginRef {
+  getPlugins: () => Plugin[];
+  setPlugins: (newPlugins: Plugin[]) => void;
+  applyTransformPlugins: (content: string) => string;
+}
+
+const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
+  const defaultPlugins: Plugin[] = [
     {
       id: 0,
       type: "task",
@@ -54,25 +68,37 @@ export default function TransformPlugin() {
     },
   ];
 
-  const [lists, setLists] = useState(defaultPlugins);
+  const [plugins, setPlugins] = useState<Plugin[]>(defaultPlugins);
   const [count, setCount] = useState(defaultPlugins.length);
 
-  // Add a new list item
-  const addList = () => {
-    setLists([...lists, { id: count, type: "", content: "" }]);
+  // Expose methods for parent components
+  useImperativeHandle(ref, () => ({
+    getPlugins: () => plugins,
+    setPlugins: (newPlugins) => setPlugins(newPlugins),
+    applyTransformPlugins: (content) => `Transformed: ${content}`,
+  }));
+
+  // Add a new plugin
+  const addPlugin = () => {
+    setPlugins([...plugins, { id: plugins.length, type: "", content: "" }]);
     setCount(count + 1);
   };
 
-  // Remove a specific list item
-  const removeList = (id: number) => {
-    setLists(lists.filter((list) => list.id !== id));
+  // Remove a plugin
+  const removePlugin = (id: number) => {
+    setPlugins(plugins.filter((plugin) => plugin.id !== id));
+    setCount(count - 1);
   };
 
-  // Handle changes in the dropdown or textarea
-  const updateList = (id: number, field: "type" | "content", value: string) => {
-    setLists(
-      lists.map((list) =>
-        list.id === id ? { ...list, [field]: value } : list,
+  // Update plugin data
+  const updatePlugin = (
+    id: number,
+    field: "type" | "content",
+    value: string,
+  ) => {
+    setPlugins(
+      plugins.map((plugin) =>
+        plugin.id === id ? { ...plugin, [field]: value } : plugin,
       ),
     );
   };
@@ -81,24 +107,24 @@ export default function TransformPlugin() {
     <div className="flex flex-col items-start p-4 max-w-lg gap-2 border rounded-md w-full">
       <h2 className="pb-5 text-2xl">Transform Plugins</h2>
 
-      {/* Add New List Button */}
-      <Button variant="outline" onClick={addList} className="cursor-pointer">
+      {/* Add Plugin Button */}
+      <Button variant="outline" onClick={addPlugin}>
         <Plus className="h-5 w-5" />
-        <span> Add List</span>
+        <span> Add Plugin</span>
       </Button>
 
-      {/* Dynamic List Items */}
-      {lists.map((list) => (
+      {/* Plugin List */}
+      {plugins.map((plugin) => (
         <div
-          key={list.id}
+          key={plugin.id}
           className="mb-4 p-4 rounded-md shadow bg-white w-full border space-y-2"
         >
           {/* Dropdown Selection */}
           <div>
             <h3 className="p-1 text-md">Plugin Name</h3>
             <Select
-              value={list.type}
-              onValueChange={(value) => updateList(list.id, "type", value)}
+              value={plugin.type}
+              onValueChange={(value) => updatePlugin(plugin.id, "type", value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a Plugin Name" />
@@ -113,20 +139,24 @@ export default function TransformPlugin() {
               </SelectContent>
             </Select>
           </div>
+
           {/* Scrollable Textarea */}
           <div>
             <h3 className="p-1 text-md">Plugin Configuration</h3>
             <Textarea
-              value={list.content}
-              onChange={(e) => updateList(list.id, "content", e.target.value)}
+              value={plugin.content}
+              onChange={(e) =>
+                updatePlugin(plugin.id, "content", e.target.value)
+              }
               className="w-full p-2 border rounded-md h-24 overflow-y-auto"
               placeholder="Plugin Configuration..."
-            ></Textarea>
+            />
           </div>
-          {/* Remove Button */}
+
+          {/* Remove Plugin Button */}
           <Button
-            onClick={() => removeList(list.id)}
-            className="mt-2 px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition cursor-pointer"
+            onClick={() => removePlugin(plugin.id)}
+            className="mt-2 px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
           >
             Remove
           </Button>
@@ -134,4 +164,6 @@ export default function TransformPlugin() {
       ))}
     </div>
   );
-}
+});
+
+export default TransformPlugin;

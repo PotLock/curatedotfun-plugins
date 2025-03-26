@@ -14,6 +14,7 @@ export default function Header() {
         <div className="flex items-center justify-center gap-3 ">
           {navigation.map((link) => (
             <a
+              key={link.name}
               href={link.href}
               className="text-sm font-medium leading-6 min-w-[64px]"
             >

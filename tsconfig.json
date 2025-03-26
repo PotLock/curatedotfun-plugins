@@ -22,6 +22,12 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Path aliases for intuitive imports
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./apps/example/src/frontend/src/*"]
+    }
   }
 }
