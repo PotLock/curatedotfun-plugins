@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*", "../example-revamp/frontend/vite.config.ts", "../example-revamp/frontend/tsconfig.json", "../example-revamp/frontend/tsconfig.node.json", "../example-revamp/frontend/tsconfig.app.json", "../example-revamp/frontend/eslint.config.js", "../example-revamp/frontend/src"],
+  "exclude": ["node_modules", "dist"]
+}

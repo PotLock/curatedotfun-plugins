@@ -1,0 +1,29 @@
+{
+  "name": "@curatedotfun/example",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "rspack build",
+    "start": "rspack build && node dist/main.js",
+    "dev": "NODE_ENV=development concurrently \"rspack build --watch\" \"wait-on dist/main.js && bun --watch dist/main.js\""
+  },
+  "devDependencies": {
+    "@curatedotfun/types": "workspace:*",
+    "@tailwindcss/vite": "^4.0.17",
+    "@types/node": "^20.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@fontsource/londrina-solid": "^5.2.5",
+    "@fontsource/roboto": "^5.2.5",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-slot": "^1.1.2",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.484.0",
+    "react-hot-toast": "^2.5.2",
+    "tailwind-merge": "^3.0.2",
+    "tw-animate-css": "^1.2.4"
+  }
+}
