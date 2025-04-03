@@ -1,4 +1,4 @@
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { usePluginContext } from "../../lib/plugin-context";
 
 // Define the Plugin type
 type Plugin = {
@@ -27,41 +28,34 @@ export interface DistributionPluginRef {
 }
 
 const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
-  const defaultPlugins: Plugin[] = [
-    {
-      id: 0,
-      type: "task",
-      content: `{
-        "botToken": "{TELEGRAM_BOT_TOKEN}",
-        "channelId": "@your_channel"
-      }`,
-    },
-    {
-      id: 1,
-      type: "note",
-      content: `{
-        "accountId": "{NEAR_ACCOUNT_ID}",
-        "privateKey": "{NEAR_PRIVATE_KEY}",
-        "networkId": "testnet"
-      }`,
-    },
-    {
-      id: 2,
-      type: "reminder",
-      content: `{
-        "serviceUrl": "http://localhost:4001",
-        "apiSecret": "{API_SECRET}"
-      }`,
-    },
-  ];
-
-  const [lists, setLists] = useState<Plugin[]>(defaultPlugins);
-  const [count, setCount] = useState(defaultPlugins.length);
+  const { availablePlugins, pluginDefaults } = usePluginContext();
+  
+  const [lists, setLists] = useState<Plugin[]>([]);
+  const [count, setCount] = useState(0);
+  
+  // Initialize with default plugins when available plugins are loaded
+  useEffect(() => {
+    if (availablePlugins.distributor.length > 0 && lists.length === 0) {
+      const initialPlugins = availablePlugins.distributor.slice(0, 3).map((pluginName, index) => ({
+        id: index,
+        type: pluginName,
+        content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
+      }));
+      
+      setLists(initialPlugins);
+      setCount(initialPlugins.length);
+    }
+  }, [availablePlugins.distributor, pluginDefaults, lists.length]);
 
   useImperativeHandle(ref, () => ({
     getPlugins: () => lists,
     setPlugins: (newPlugins) => setLists(newPlugins),
-    distributeContent: (content) => console.log("Distributed:", content),
+    // This method is now a stub as the actual distribution is handled in the parent component
+    // using the distributeContent function from the API service
+    distributeContent: (content) => {
+      console.log('Distribution plugins:', lists);
+      return content;
+    },
   }));
 
   const addList = () => {
@@ -75,19 +69,40 @@ const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
   };
 
   const updateList = (id: number, field: "type" | "content", value: string) => {
-    if (field === "content" && value.trim() !== "") {
+    if (field === "type") {
+      // When plugin type changes, load the default configuration
+      setLists(
+        lists.map((list) =>
+          list.id === id
+            ? {
+                ...list,
+                type: value,
+                content: JSON.stringify(pluginDefaults[value] || {}, null, 2),
+              }
+            : list
+        )
+      );
+    } else if (field === "content" && value.trim() !== "") {
+      // Validate JSON for content updates
       try {
         JSON.parse(value);
+        setLists(
+          lists.map((list) =>
+            list.id === id ? { ...list, content: value } : list
+          )
+        );
       } catch (error) {
         console.warn("Invalid JSON:", error);
         return;
       }
+    } else {
+      // For empty content or other fields
+      setLists(
+        lists.map((list) =>
+          list.id === id ? { ...list, [field]: value } : list
+        )
+      );
     }
-    setLists(
-      lists.map((list) =>
-        list.id === id ? { ...list, [field]: value } : list,
-      ),
-    );
   };
 
   return (
@@ -115,10 +130,16 @@ const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel>Names</SelectLabel>
-                  <SelectItem value="task">Task</SelectItem>
-                  <SelectItem value="note">Note</SelectItem>
-                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectLabel>Distribution Plugins</SelectLabel>
+                  {availablePlugins.distributor.length === 0 ? (
+                    <SelectItem value="" disabled>Loading plugins...</SelectItem>
+                  ) : (
+                    availablePlugins.distributor.map((pluginName) => (
+                      <SelectItem key={pluginName} value={pluginName}>
+                        {pluginName}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectGroup>
               </SelectContent>
             </Select>

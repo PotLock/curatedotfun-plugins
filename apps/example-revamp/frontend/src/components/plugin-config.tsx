@@ -1,6 +1,6 @@
 import { RefreshCw, Save, Undo2 } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TransformPlugin, {
   TransformPluginRef,
 } from "./plugin-config/transform-plugins";
@@ -10,6 +10,9 @@ import DistributionPlugin, {
 import toast from "react-hot-toast";
 import { Textarea } from "./ui/textarea";
 import PluginRegistry from "./plugin-config/plugin-registry";
+import { fetchPluginRegistry, updatePluginRegistry } from "../lib/registry";
+import { parseContent, transformContent, formatTransformedContent } from "../lib/transform";
+import { distributeContent, formatDistributionResults } from "../lib/distribute";
 
 export default function PluginConfig() {
   const [view, setView] = useState<"json" | "config">("config");
@@ -63,13 +66,45 @@ export default function PluginConfig() {
     toast.success("Configuration reset successfully!");
   };
 
-  const handleTransform = () => {
+  // Fetch plugin registry on component mount
+  useEffect(() => {
+    const loadPluginRegistry = async () => {
+      try {
+        const registry = await fetchPluginRegistry();
+        // You can use the registry data here if needed
+        console.log('Plugin registry loaded:', registry);
+        toast.success('Plugin registry loaded successfully');
+      } catch (error) {
+        console.error('Failed to load plugin registry:', error);
+        toast.error(`Failed to load plugin registry: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+
+    loadPluginRegistry();
+  }, []);
+
+  const handleTransform = async () => {
     try {
       if (!transformPluginRef.current)
         throw new Error("Transform plugins not loaded");
-      const transformed =
-        transformPluginRef.current.applyTransformPlugins(content);
-      setTransformedContent(transformed);
+      
+      // Get transform plugins from the ref
+      const plugins = transformPluginRef.current.getPlugins().map(plugin => ({
+        plugin: plugin.type,
+        config: JSON.parse(plugin.content)
+      }));
+      
+      // Parse the content
+      const parsedContent = parseContent(content);
+      
+      // Call the API to transform the content
+      const result = await transformContent(plugins, parsedContent);
+      
+      // Format the transformed content for display
+      const formattedContent = formatTransformedContent(result);
+      
+      // Update the state
+      setTransformedContent(formattedContent);
       toast.success("Transform completed successfully!");
     } catch (error: unknown) {
       toast.error(
@@ -78,12 +113,28 @@ export default function PluginConfig() {
     }
   };
 
-  const handleDistribute = () => {
+  const handleDistribute = async () => {
     try {
       if (!distributionPluginRef.current)
         throw new Error("Distribution plugins not loaded");
-      distributionPluginRef.current.distributeContent(transformedContent);
-      toast.success("Distribution completed successfully!");
+      
+      // Get distribution plugins from the ref
+      const plugins = distributionPluginRef.current.getPlugins().map(plugin => ({
+        plugin: plugin.type,
+        config: JSON.parse(plugin.content)
+      }));
+      
+      // Parse the content if needed
+      const parsedContent = transformedContent ? parseContent(transformedContent) : {};
+      
+      // Call the API to distribute the content
+      const results = await distributeContent(plugins, parsedContent);
+      
+      // Format the results for display
+      const formattedResults = formatDistributionResults(results);
+      
+      // Show the results
+      toast.success(`Distribution completed successfully!\n${formattedResults}`);
     } catch (error: unknown) {
       toast.error(
         `Distribution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -91,17 +142,25 @@ export default function PluginConfig() {
     }
   };
 
-  const handleRegistrySave = () => {
+  const handleRegistrySave = async () => {
     try {
-      const registryConfig = {
-        transform: transformPluginRef.current?.getPlugins() || [],
-        distribution: distributionPluginRef.current?.getPlugins() || [],
-      };
-
-      localStorage.setItem("registryConfig", JSON.stringify(registryConfig));
-      toast.success("Registry saved successfully!");
-    } catch {
-      toast.error("Error saving registry");
+      // Get the registry data from the form
+      const registryData = document.querySelector('#registryEditor') as HTMLTextAreaElement;
+      if (!registryData || !registryData.value) {
+        throw new Error('Registry data is empty');
+      }
+      
+      // Parse the registry data
+      const registry = JSON.parse(registryData.value);
+      
+      // Update the registry on the server
+      await updatePluginRegistry(registry);
+      
+      toast.success("Registry updated successfully!");
+    } catch (error) {
+      toast.error(
+        `Failed to update registry: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   };
 

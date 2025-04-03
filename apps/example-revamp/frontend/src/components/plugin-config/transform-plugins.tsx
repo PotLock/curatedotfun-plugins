@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
+import { usePluginContext } from "../../lib/plugin-context";
 
 // Define the Plugin type
 type Plugin = {
@@ -27,55 +28,35 @@ export interface TransformPluginRef {
 }
 
 const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
-  const defaultPlugins: Plugin[] = [
-    {
-      id: 0,
-      type: "task",
-      content: `{
-            "prompt": "Transform this into an engaging news article with a title and content.",
-            "apiKey": "{OPENROUTER_API_KEY}",
-            "schema": {
-              "title": {
-                "type": "string",
-                "description": "Engaging title for the article"
-              },
-              "content": {
-                "type": "string",
-                "description": "Article content in HTML format"
-              }
-            }
-          }`,
-    },
-    {
-      id: 1,
-      type: "note",
-      content: `{
-            "mappings": {
-              "title": "{{title}}",
-              "content": "{{content}}",
-              "link": "https://example.com/posts/{{id}}",
-              "publishedAt": "{{timestamp}}",
-              "guid": "post-{{id}}"
-            }
-          }`,
-    },
-    {
-      id: 2,
-      type: "reminder",
-      content: `{
-            "format": "🚀 {{title}} \\n\\n {{content}} \\n\\n#{{#tags}}#{{.}}{{/tags}}"
-          }`,
-    },
-  ];
-
-  const [plugins, setPlugins] = useState<Plugin[]>(defaultPlugins);
-  const [count, setCount] = useState(defaultPlugins.length);
+  const { availablePlugins, pluginDefaults } = usePluginContext();
+  
+  const [plugins, setPlugins] = useState<Plugin[]>([]);
+  const [count, setCount] = useState(0);
+  
+  // Initialize with default plugins when available plugins are loaded
+  useEffect(() => {
+    if (availablePlugins.transformer.length > 0 && plugins.length === 0) {
+      const initialPlugins = availablePlugins.transformer.slice(0, 3).map((pluginName, index) => ({
+        id: index,
+        type: pluginName,
+        content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
+      }));
+      
+      setPlugins(initialPlugins);
+      setCount(initialPlugins.length);
+    }
+  }, [availablePlugins.transformer, pluginDefaults, plugins.length]);
 
   // Expose methods for parent components
   useImperativeHandle(ref, () => ({
     getPlugins: () => plugins,
     setPlugins: (newPlugins) => setPlugins(newPlugins),
-    applyTransformPlugins: (content) => `Transformed: ${content}`,
+    // This method is now a stub as the actual transformation is handled in the parent component
+    // using the transformContent function from the API service
+    applyTransformPlugins: (content) => {
+      console.log('Transform plugins:', plugins);
+      return content;
+    },
   }));
 
   // Add a new plugin
@@ -96,11 +77,27 @@ const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
     field: "type" | "content",
     value: string,
   ) => {
-    setPlugins(
-      plugins.map((plugin) =>
-        plugin.id === id ? { ...plugin, [field]: value } : plugin,
-      ),
-    );
+    if (field === "type") {
+      // When plugin type changes, load the default configuration
+      setPlugins(
+        plugins.map((plugin) =>
+          plugin.id === id
+            ? {
+                ...plugin,
+                type: value,
+                content: JSON.stringify(pluginDefaults[value] || {}, null, 2),
+              }
+            : plugin
+        )
+      );
+    } else {
+      // For content updates, just update the content
+      setPlugins(
+        plugins.map((plugin) =>
+          plugin.id === id ? { ...plugin, [field]: value } : plugin
+        )
+      );
+    }
   };
 
   return (
@@ -131,10 +128,16 @@ const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel>Names</SelectLabel>
-                  <SelectItem value="task">Task</SelectItem>
-                  <SelectItem value="note">Note</SelectItem>
-                  <SelectItem value="reminder">Reminder</SelectItem>
+                  <SelectLabel>Transform Plugins</SelectLabel>
+                  {availablePlugins.transformer.length === 0 ? (
+                    <SelectItem value="" disabled>Loading plugins...</SelectItem>
+                  ) : (
+                    availablePlugins.transformer.map((pluginName) => (
+                      <SelectItem key={pluginName} value={pluginName}>
+                        {pluginName}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectGroup>
               </SelectContent>
             </Select>
