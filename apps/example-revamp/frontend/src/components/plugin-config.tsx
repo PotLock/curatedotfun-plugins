@@ -1,41 +1,37 @@
 import { RefreshCw, Save, Undo2 } from "lucide-react";
-import { Button } from "./ui/button";
-import { useEffect, useRef, useState } from "react";
-import TransformPlugin, {
-  TransformPluginRef,
-} from "./plugin-config/transform-plugins";
-import DistributionPlugin, {
-  DistributionPluginRef,
-} from "./plugin-config/distribution-plugins";
+import { useState } from "react";
 import toast from "react-hot-toast";
-import { Textarea } from "./ui/textarea";
-import PluginRegistry from "./plugin-config/plugin-registry";
-import { fetchPluginRegistry, updatePluginRegistry } from "../lib/registry";
-import { parseContent, transformContent, formatTransformedContent } from "../lib/transform";
 import { distributeContent, formatDistributionResults } from "../lib/distribute";
+import { usePluginContext } from "../lib/plugin-context";
+import { updatePluginRegistry } from "../lib/registry";
+import { formatTransformedContent, parseContent, transformContent } from "../lib/transform";
+import DistributionPlugin, { Plugin as DistributionPluginType } from "./plugin-config/distribution-plugins";
+import PluginRegistry from "./plugin-config/plugin-registry";
+import TransformPlugin, { Plugin as TransformPluginType } from "./plugin-config/transform-plugins";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 
 export default function PluginConfig() {
+  const { refreshRegistry } = usePluginContext();
   const [view, setView] = useState<"json" | "config">("config");
   const [jsonConfig, setJsonConfig] = useState<string>("{}");
   const [content, setContent] = useState<string>("");
   const [transformedContent, setTransformedContent] = useState<string>("");
-
-  // Properly typed refs
-  const transformPluginRef = useRef<TransformPluginRef | null>(null);
-  const distributionPluginRef = useRef<DistributionPluginRef | null>(null);
+  const [transformPlugins, setTransformPlugins] = useState<TransformPluginType[]>([]);
+  const [distributionPlugins, setDistributionPlugins] = useState<DistributionPluginType[]>([]);
 
   const toggleView = () => {
     try {
       if (view === "config") {
         const config = {
-          transform: transformPluginRef.current?.getPlugins() || [],
-          distribution: distributionPluginRef.current?.getPlugins() || [],
+          transform: transformPlugins,
+          distribution: distributionPlugins,
         };
         setJsonConfig(JSON.stringify(config, null, 2));
       } else {
         const config = JSON.parse(jsonConfig);
-        transformPluginRef.current?.setPlugins(config.transform || []);
-        distributionPluginRef.current?.setPlugins(config.distribution || []);
+        setTransformPlugins(config.transform || []);
+        setDistributionPlugins(config.distribution || []);
       }
       setView(view === "json" ? "config" : "json");
     } catch {
@@ -49,8 +45,8 @@ export default function PluginConfig() {
         view === "json"
           ? JSON.parse(jsonConfig)
           : {
-              transform: transformPluginRef.current?.getPlugins() || [],
-              distribution: distributionPluginRef.current?.getPlugins() || [],
+              transform: transformPlugins,
+              distribution: distributionPlugins,
             };
       localStorage.setItem("pluginConfig", JSON.stringify(config));
       toast.success("Configuration saved successfully!");
@@ -63,33 +59,19 @@ export default function PluginConfig() {
     setJsonConfig("{}");
     setContent("");
     setTransformedContent("");
+    setTransformPlugins([]);
+    setDistributionPlugins([]);
     toast.success("Configuration reset successfully!");
   };
 
-  // Fetch plugin registry on component mount
-  useEffect(() => {
-    const loadPluginRegistry = async () => {
-      try {
-        const registry = await fetchPluginRegistry();
-        // You can use the registry data here if needed
-        console.log('Plugin registry loaded:', registry);
-        toast.success('Plugin registry loaded successfully');
-      } catch (error) {
-        console.error('Failed to load plugin registry:', error);
-        toast.error(`Failed to load plugin registry: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-    };
-
-    loadPluginRegistry();
-  }, []);
 
   const handleTransform = async () => {
     try {
-      if (!transformPluginRef.current)
-        throw new Error("Transform plugins not loaded");
+      if (transformPlugins.length === 0)
+        throw new Error("No transform plugins configured");
       
-      // Get transform plugins from the ref
-      const plugins = transformPluginRef.current.getPlugins().map(plugin => ({
+      // Map transform plugins to the format expected by the API
+      const plugins = transformPlugins.map(plugin => ({
         plugin: plugin.type,
         config: JSON.parse(plugin.content)
       }));
@@ -115,11 +97,11 @@ export default function PluginConfig() {
 
   const handleDistribute = async () => {
     try {
-      if (!distributionPluginRef.current)
-        throw new Error("Distribution plugins not loaded");
+      if (distributionPlugins.length === 0)
+        throw new Error("No distribution plugins configured");
       
-      // Get distribution plugins from the ref
-      const plugins = distributionPluginRef.current.getPlugins().map(plugin => ({
+      // Map distribution plugins to the format expected by the API
+      const plugins = distributionPlugins.map(plugin => ({
         plugin: plugin.type,
         config: JSON.parse(plugin.content)
       }));
@@ -142,19 +124,20 @@ export default function PluginConfig() {
     }
   };
 
-  const handleRegistrySave = async () => {
+  const handleRegistrySave = async (registryData: string) => {
     try {
-      // Get the registry data from the form
-      const registryData = document.querySelector('#registryEditor') as HTMLTextAreaElement;
-      if (!registryData || !registryData.value) {
+      if (!registryData.trim()) {
         throw new Error('Registry data is empty');
       }
       
       // Parse the registry data
-      const registry = JSON.parse(registryData.value);
+      const registry = JSON.parse(registryData);
       
       // Update the registry on the server
       await updatePluginRegistry(registry);
+      
+      // Refresh the registry in the context
+      await refreshRegistry();
       
       toast.success("Registry updated successfully!");
     } catch (error) {
@@ -195,8 +178,14 @@ export default function PluginConfig() {
           />
         ) : (
           <>
-            <TransformPlugin ref={transformPluginRef} />
-            <DistributionPlugin ref={distributionPluginRef} />
+            <TransformPlugin 
+              plugins={transformPlugins} 
+              onPluginsChange={setTransformPlugins} 
+            />
+            <DistributionPlugin 
+              plugins={distributionPlugins} 
+              onPluginsChange={setDistributionPlugins} 
+            />
           </>
         )}
         <PluginRegistry handleRegistrySave={handleRegistrySave} />

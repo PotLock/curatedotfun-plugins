@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -14,24 +14,20 @@ import { Textarea } from "../ui/textarea";
 import { usePluginContext } from "../../lib/plugin-context";
 
 // Define the Plugin type
-type Plugin = {
+export type Plugin = {
   id: number;
   type: string;
   content: string;
 };
 
-// Define the ref type for TransformPlugin
-export interface TransformPluginRef {
-  getPlugins: () => Plugin[];
-  setPlugins: (newPlugins: Plugin[]) => void;
-  applyTransformPlugins: (content: string) => string;
+interface TransformPluginProps {
+  plugins: Plugin[];
+  onPluginsChange: (plugins: Plugin[]) => void;
 }
 
-const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
+const TransformPlugin = ({ plugins, onPluginsChange }: TransformPluginProps) => {
   const { availablePlugins, pluginDefaults } = usePluginContext();
-  
-  const [plugins, setPlugins] = useState<Plugin[]>([]);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(() => plugins.length);
   
   // Initialize with default plugins when available plugins are loaded
   useEffect(() => {
@@ -42,32 +38,20 @@ const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
         content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
       }));
       
-      setPlugins(initialPlugins);
+      onPluginsChange(initialPlugins);
       setCount(initialPlugins.length);
     }
-  }, [availablePlugins.transformer, pluginDefaults, plugins.length]);
-
-  // Expose methods for parent components
-  useImperativeHandle(ref, () => ({
-    getPlugins: () => plugins,
-    setPlugins: (newPlugins) => setPlugins(newPlugins),
-    // This method is now a stub as the actual transformation is handled in the parent component
-    // using the transformContent function from the API service
-    applyTransformPlugins: (content) => {
-      console.log('Transform plugins:', plugins);
-      return content;
-    },
-  }));
+  }, [availablePlugins.transformer, pluginDefaults, plugins.length, onPluginsChange]);
 
   // Add a new plugin
   const addPlugin = () => {
-    setPlugins([...plugins, { id: plugins.length, type: "", content: "" }]);
+    onPluginsChange([...plugins, { id: plugins.length, type: "", content: "" }]);
     setCount(count + 1);
   };
 
   // Remove a plugin
   const removePlugin = (id: number) => {
-    setPlugins(plugins.filter((plugin) => plugin.id !== id));
+    onPluginsChange(plugins.filter((plugin) => plugin.id !== id));
     setCount(count - 1);
   };
 
@@ -79,7 +63,7 @@ const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
   ) => {
     if (field === "type") {
       // When plugin type changes, load the default configuration
-      setPlugins(
+      onPluginsChange(
         plugins.map((plugin) =>
           plugin.id === id
             ? {
@@ -92,7 +76,7 @@ const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
       );
     } else {
       // For content updates, just update the content
-      setPlugins(
+      onPluginsChange(
         plugins.map((plugin) =>
           plugin.id === id ? { ...plugin, [field]: value } : plugin
         )
@@ -167,6 +151,6 @@ const TransformPlugin = forwardRef<TransformPluginRef>((_, ref) => {
       ))}
     </div>
   );
-});
+};
 
 export default TransformPlugin;

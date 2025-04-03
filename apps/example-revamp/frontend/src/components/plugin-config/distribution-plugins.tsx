@@ -1,4 +1,4 @@
-import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -14,65 +14,50 @@ import { Textarea } from "../ui/textarea";
 import { usePluginContext } from "../../lib/plugin-context";
 
 // Define the Plugin type
-type Plugin = {
+export type Plugin = {
   id: number;
   type: string;
   content: string;
 };
 
-// Define the ref type for DistributionPlugin
-export interface DistributionPluginRef {
-  getPlugins: () => Plugin[];
-  setPlugins: (newPlugins: Plugin[]) => void;
-  distributeContent: (content: string) => void;
+interface DistributionPluginProps {
+  plugins: Plugin[];
+  onPluginsChange: (plugins: Plugin[]) => void;
 }
 
-const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
+const DistributionPlugin = ({ plugins, onPluginsChange }: DistributionPluginProps) => {
   const { availablePlugins, pluginDefaults } = usePluginContext();
-  
-  const [lists, setLists] = useState<Plugin[]>([]);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(() => plugins.length);
   
   // Initialize with default plugins when available plugins are loaded
   useEffect(() => {
-    if (availablePlugins.distributor.length > 0 && lists.length === 0) {
+    if (availablePlugins.distributor.length > 0 && plugins.length === 0) {
       const initialPlugins = availablePlugins.distributor.slice(0, 3).map((pluginName, index) => ({
         id: index,
         type: pluginName,
         content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
       }));
       
-      setLists(initialPlugins);
+      onPluginsChange(initialPlugins);
       setCount(initialPlugins.length);
     }
-  }, [availablePlugins.distributor, pluginDefaults, lists.length]);
-
-  useImperativeHandle(ref, () => ({
-    getPlugins: () => lists,
-    setPlugins: (newPlugins) => setLists(newPlugins),
-    // This method is now a stub as the actual distribution is handled in the parent component
-    // using the distributeContent function from the API service
-    distributeContent: (content) => {
-      console.log('Distribution plugins:', lists);
-      return content;
-    },
-  }));
+  }, [availablePlugins.distributor, pluginDefaults, plugins.length, onPluginsChange]);
 
   const addList = () => {
-    setLists([...lists, { id: count, type: "", content: "" }]);
+    onPluginsChange([...plugins, { id: count, type: "", content: "" }]);
     setCount(count + 1);
   };
 
   const removeList = (id: number) => {
-    setLists(lists.filter((list) => list.id !== id));
+    onPluginsChange(plugins.filter((list) => list.id !== id));
     setCount(count - 1);
   };
 
   const updateList = (id: number, field: "type" | "content", value: string) => {
     if (field === "type") {
       // When plugin type changes, load the default configuration
-      setLists(
-        lists.map((list) =>
+      onPluginsChange(
+        plugins.map((list) =>
           list.id === id
             ? {
                 ...list,
@@ -86,8 +71,8 @@ const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
       // Validate JSON for content updates
       try {
         JSON.parse(value);
-        setLists(
-          lists.map((list) =>
+        onPluginsChange(
+          plugins.map((list) =>
             list.id === id ? { ...list, content: value } : list
           )
         );
@@ -97,8 +82,8 @@ const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
       }
     } else {
       // For empty content or other fields
-      setLists(
-        lists.map((list) =>
+      onPluginsChange(
+        plugins.map((list) =>
           list.id === id ? { ...list, [field]: value } : list
         )
       );
@@ -114,7 +99,7 @@ const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
         <span> Add Plugin</span>
       </Button>
 
-      {lists.map((list) => (
+      {plugins.map((list) => (
         <div
           key={list.id}
           className="mb-4 p-4 rounded-md shadow bg-white w-full border space-y-2"
@@ -165,6 +150,6 @@ const DistributionPlugin = forwardRef<DistributionPluginRef>((_, ref) => {
       ))}
     </div>
   );
-});
+};
 
 export default DistributionPlugin;

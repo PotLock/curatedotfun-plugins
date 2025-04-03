@@ -1,5 +1,5 @@
 {
-  "name": "example-revamp",
+  "name": "@curatedotfun/example-revamp",
   "module": "index.ts",
   "type": "module",
   "private": true,

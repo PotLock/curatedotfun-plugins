@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { usePluginContext } from "../../lib/plugin-context";
-import { updatePluginRegistry } from "../../lib/registry";
-import toast from "react-hot-toast";
 
 interface PluginRegistryProps {
   handleRegistrySave: (registryData: string) => void;
@@ -12,7 +10,7 @@ interface PluginRegistryProps {
 export default function PluginRegistry({
   handleRegistrySave,
 }: PluginRegistryProps) {
-  const { registry, loading, refreshRegistry } = usePluginContext();
+  const { registry, loading } = usePluginContext();
   const [registryData, setRegistryData] = useState<string>("");
   const [isValid, setIsValid] = useState<boolean>(true);
 
@@ -51,17 +49,17 @@ export default function PluginRegistry({
       <Textarea
         id="registryEditor"
         className="w-full h-60 p-4 border border-neutral-300 rounded-lg"
-        placeholder={isLoading ? "Loading registry data..." : "Enter your plugin JSON here..."}
+        placeholder={loading ? "Loading registry data..." : "Enter your plugin JSON here..."}
         value={registryData}
         onChange={handleChange}
         aria-invalid={!isValid}
-        disabled={isLoading}
+        disabled={loading}
       />
       {!isValid && <p className="text-red-500 text-sm">Invalid JSON format</p>}
       <Button
         className="mt-2 cursor-pointer"
         onClick={() => handleRegistrySave(registryData)}
-        disabled={!isValid || !registryData.trim() || isLoading}
+        disabled={!isValid || !registryData.trim() || loading}
       >
         Update Registry
       </Button>
