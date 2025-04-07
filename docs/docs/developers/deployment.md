@@ -21,8 +21,6 @@ The fastest way to deploy is using the Railway template:
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/RiUi5U?referralCode=3O4l1-)
 
-You can also access the template directly at: <https://railway.com/template/RiUi5U?referralCode=3O4l1->
-
 ### ⚙️ Configuration
 
 After deploying the template, you'll need to configure the following environment variables in the Railway dashboard:
