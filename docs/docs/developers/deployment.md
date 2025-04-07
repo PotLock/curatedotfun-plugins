@@ -21,7 +21,7 @@ The fastest way to deploy is using the Railway template:
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/RiUi5U?referralCode=3O4l1-)
 
-You can also access the template directly at: https://railway.com/template/RiUi5U?referralCode=3O4l1-
+You can also access the template directly at: <https://railway.com/template/RiUi5U?referralCode=3O4l1->
 
 ### ⚙️ Configuration
 
@@ -29,15 +29,15 @@ After deploying the template, you'll need to configure the following environment
 
 #### Required Environment Variables
 
-- `TWITTER_USERNAME`: Your Twitter username
-- `TWITTER_PASSWORD`: Your Twitter password
-- `TWITTER_EMAIL`: Your Twitter email
-- `TWITTER_2FA`: Your Twitter 2FA code
+- `TWITTER_USERNAME`: Your Twitter username.
+- `TWITTER_PASSWORD`: Your Twitter password.
+- `TWITTER_EMAIL`: Your Twitter email.
+- `TWITTER_2FA`: Your Twitter 2FA code.
 
 #### Optional Environment Variables
 
-- `TELEGRAM_BOT_TOKEN`: Your Telegram bot token (required for the [Telegram plugin](../plugins/distributors/telegram.md))
-- `OPENROUTER_API_KEY`: Your OpenRouter API key (required for the [AI Transform plugin](../plugins/transformers/ai-transform.md))
+- `TELEGRAM_BOT_TOKEN`: Your Telegram bot token (required for the [Telegram plugin](../plugins/distributors/telegram.md)).
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (required for the [AI Transform plugin](../plugins/transformers/ai-transform.md)).
 
 ### 🔧 Customization
 
@@ -49,7 +49,7 @@ Common issues and solutions:
 
 1. **Database Connection Issues**
    - Verify that the Postgres service is properly linked to your application
-   - Check the connection string in the environment variables (`DATABASE_URL` should be a shared environemnt variable `${{ Postgres.DATABASE_URL }}`)
+   - Check the connection string in the environment variables (`DATABASE_URL` should be a shared environment variable `${{ Postgres.DATABASE_URL }}`)
 
 2. **Twitter Authentication Problems**
    - Ensure all Twitter credentials are correctly set in the environment variables
