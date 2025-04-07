@@ -6,131 +6,60 @@ sidebar_position: 2
 
 Deploy your curate.fun instance to production ⚡
 
-## 🌥️ Deploying to Fly.io
+## 🚂 Deploying to Railway
 
-The backend service can be deployed to Fly.io with SQLite support.
+The backend service can be deployed to Railway using their built-in Postgres service.
 
 ### 📋 Prerequisites
 
-Install the Fly CLI:
+- A [Railway](https://railway.app/) account
+- A GitHub account (optional, for CI/CD setup)
 
-```bash
-# 🍎 macOS
-brew install flyctl
+### 🚀 Quick Deployment
 
-# 🪟 Windows
-powershell -Command "iwr https://fly.io/install.ps1 -useb | iex"
+The fastest way to deploy is using the Railway template:
 
-# 🐧 Linux
-curl -L https://fly.io/install.sh | sh
-```
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/RiUi5U?referralCode=3O4l1-)
 
-### 🔑 Authentication
+You can also access the template directly at: https://railway.com/template/RiUi5U?referralCode=3O4l1-
 
-Sign up and authenticate with Fly.io:
+### ⚙️ Configuration
 
-```bash
-fly auth signup
-# or
-fly auth login
-```
+After deploying the template, you'll need to configure the following environment variables in the Railway dashboard:
 
-### 🛫 Deployment Steps
+#### Required Environment Variables
 
-1. 🎬 Initialize your Fly.io application:
+- `TWITTER_USERNAME`: Your Twitter username
+- `TWITTER_PASSWORD`: Your Twitter password
+- `TWITTER_EMAIL`: Your Twitter email
+- `TWITTER_2FA`: Your Twitter 2FA code
 
-```bash
-bun run deploy:init
-```
+#### Optional Environment Variables
 
-This will:
+- `TELEGRAM_BOT_TOKEN`: Your Telegram bot token (required for the [Telegram plugin](../plugins/distributors/telegram.md))
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (required for the [AI Transform plugin](../plugins/transformers/ai-transform.md))
 
-- 📦 Create the Fly App
-- 💾 Set up LiteFS volume ([LiteFS Speedrun](https://fly.io/docs/litefs/speedrun/))
-- 🔄 Attach Consul for LiteFS cluster management
+### 🔧 Customization
 
-2. ⚙️ Configure environment variables:
-
-```bash
-# 🐦 Twitter Authentication
-fly secrets set TWITTER_USERNAME=your_twitter_username
-fly secrets set TWITTER_PASSWORD=your_twitter_password
-fly secrets set TWITTER_EMAIL=your_twitter_email
-
-# 📢 Distribution Services
-fly secrets set TELEGRAM_BOT_TOKEN=your_bot_token
-fly secrets set TELEGRAM_CHANNEL_ID=your_channel_id
-```
-
-3. 🚀 Deploy the application:
-
-```bash
-bun run deploy
-```
-
-### 🏗️ Architecture
-
-- ✨ Distributed SQLite using LiteFS
-- 🔄 Automatic file replication across instances
-- 🎯 Primary/replica configuration using Consul
-- 🔒 HTTPS enabled by default
-
-#### 🔍 Details
-
-- 📍 Primary instance (LAX region) handles write operations
-- 🔄 Replicas automatically sync data from primary
-- 🎛️ Consul manages primary/replica coordination
-- ⚡ Automatic failover if primary becomes unavailable
-
-#### 📁 Key Files
-
-- `fly.toml`: Main Fly.io configuration
-- `litefs.yml`: LiteFS configuration
-- `Dockerfile`: Container and LiteFS setup
-
-### 📊 Monitoring
-
-Monitor your deployment:
-
-```bash
-# 👀 View deployment status
-fly status
-
-# 📝 View logs
-fly logs
-
-# 🖥️ Access dashboard
-fly dashboard
-```
+You'll need to customize your `curate.config.json` file to match your specific curation needs. See the [configuration documentation](./configuration.md) for details on how to set up your configuration.
 
 ### 🔧 Troubleshooting
 
 Common issues and solutions:
 
-1. **🗄️ Container issues**
+1. **Database Connection Issues**
+   - Verify that the Postgres service is properly linked to your application
+   - Check the connection string in the environment variables (should be shared environemnt variable ${{ Postgres.DATABASE_URL }})
 
-   ```bash
-   # Explore container
-   fly ssh console
-   
-   # Verify Consul
-   fly consul status
-   
-   # Check status
-   fly logs
-   ```
+2. **Twitter Authentication Problems**
+   - Ensure all Twitter credentials are correctly set in the environment variables
+   - If locked out, use Twitter cookies instead
 
-3. **💻 Scale up or downtown**
-
-   ```bash
-   # Increase count (# is number of machines)
-   fly scale count #
-   
-   # Check distribution
-   fly scale show
-   ```
+3. **Deployment Failures**
+   - Check the deployment logs in the Railway dashboard
+   - Verify that your repository has the correct structure and dependencies
 
 📚 For more help:
 
-- [Fly.io Documentation](https://fly.io/docs/)
-- [Community Discord](https://fly.io/discord)
+- [Railway Documentation](https://docs.railway.app/)
+- [Railway Discord Community](https://discord.com/invite/railway)
