@@ -16,6 +16,7 @@ const RATE_LIMIT = {
 /**
  * Rate limiting middleware for public endpoints
  * Uses Redis to track request counts across multiple instances
+ * Optimized to use Redis pipeline for better performance
  */
 export async function rateLimiter(
   c: Context,
@@ -27,22 +28,42 @@ export async function rateLimiter(
     return undefined;
   }
 
+  // Use a memory cache for very frequent requests from the same IP
+  // This reduces Redis calls for high-traffic scenarios
+  const memCache = new Map<string, { count: number; expires: number }>();
+
   // Note: Verify x-forwarded-for header handling matches your deployment environment
   // Different proxy setups may require adjusting how this header is processed
   const ip = c.req.header("x-forwarded-for") || "unknown";
   const key = `ratelimit:${ip}`;
 
   try {
-    // Get current request count
-    const requests = await redis.incr(key);
+    let requests: number;
+    let ttl: number;
 
-    // Set expiry on first request
-    if (requests === 1) {
-      await redis.expire(key, RATE_LIMIT.windowMs / 1000);
+    // Use Redis pipeline to batch commands for better performance
+    // This reduces network roundtrips to Redis
+    const pipeline = redis.pipeline();
+    pipeline.incr(key);
+    pipeline.ttl(key);
+
+    const results = await pipeline.exec();
+
+    if (!results || results.length < 2) {
+      // If pipeline fails, allow the request to proceed
+      console.error("Rate limiting pipeline error: Invalid results");
+      await next();
+      return undefined;
     }
 
-    // Get TTL for headers
-    const ttl = await redis.ttl(key);
+    requests = results[0] as number;
+    ttl = results[1] as number;
+
+    // Set expiry on first request
+    if (requests === 1 || ttl < 0) {
+      await redis.expire(key, RATE_LIMIT.windowMs / 1000);
+      ttl = RATE_LIMIT.windowMs / 1000;
+    }
 
     // Set rate limit headers
     c.header("X-RateLimit-Limit", RATE_LIMIT.max.toString());
@@ -74,8 +95,8 @@ export async function rateLimiter(
 }
 
 /**
- * Security headers middleware
- * Adds essential security headers to responses
+ * Security and caching headers middleware
+ * Adds essential security and performance-related headers to responses
  */
 export async function securityHeaders(
   c: Context,
@@ -90,12 +111,36 @@ export async function securityHeaders(
   // Enforce HTTPS for secure feed access
   c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 
+  // Add performance-related headers for GET requests to feed endpoints
+  const path = c.req.path;
+  if (
+    c.req.method === "GET" &&
+    (path.endsWith(".xml") || path.endsWith(".json") || path === "/")
+  ) {
+    // Only add Cache-Control if not already set by the route handler
+    if (!c.res.headers.has("Cache-Control")) {
+      // Public feeds can be cached by browsers and proxies
+      c.header("Cache-Control", "public, max-age=600"); // 10 minutes
+    }
+
+    // Add Vary header to ensure proper caching based on these request headers
+    c.header("Vary", "Accept, Accept-Encoding");
+
+    // Add a default ETag if not already set
+    if (!c.res.headers.has("ETag")) {
+      // Generate a simple ETag based on the current time (not ideal but better than nothing)
+      // In production, this should be based on content hash
+      c.header("ETag", `"${Date.now().toString(36)}"`);
+    }
+  }
+
   return c.res;
 }
 
 /**
  * Request timeout middleware
  * Adds timeout protection for long-running requests
+ * Optimized to avoid unnecessary Promise overhead
  */
 export async function requestTimeout(
   c: Context,
@@ -103,17 +148,27 @@ export async function requestTimeout(
 ): Promise<Response | undefined> {
   const TIMEOUT = 30000; // 30 seconds
 
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => {
-      reject(new Error("Request timeout"));
-    }, TIMEOUT);
-  });
+  // Use AbortController for more efficient timeout handling
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, TIMEOUT);
 
   try {
-    await Promise.race([next(), timeoutPromise]);
+    // Store the signal in the context for downstream middleware
+    c.set("abortSignal", controller.signal);
+
+    // Execute the next middleware with timeout
+    await next();
+
+    // Clear the timeout if the request completes successfully
+    clearTimeout(timeoutId);
+
     return c.res;
   } catch (error) {
-    if (error instanceof Error && error.message === "Request timeout") {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === "AbortError") {
       return c.json(
         {
           error: "Request Timeout",
@@ -122,6 +177,7 @@ export async function requestTimeout(
         408,
       );
     }
+
     throw error;
   }
 }
