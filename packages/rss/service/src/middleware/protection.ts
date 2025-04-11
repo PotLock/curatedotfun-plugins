@@ -13,6 +13,10 @@ const RATE_LIMIT = {
   max: 100, // limit each IP to 100 requests per windowMs
 };
 
+// Memory cache for frequent requests to reduce Redis calls
+// This cache is shared across all requests to the same server instance
+const memCache = new Map<string, { count: number; expires: number }>();
+
 /**
  * Rate limiting middleware for public endpoints
  * Uses Redis to track request counts across multiple instances
@@ -28,10 +32,6 @@ export async function rateLimiter(
     return undefined;
   }
 
-  // Use a memory cache for very frequent requests from the same IP
-  // This reduces Redis calls for high-traffic scenarios
-  const memCache = new Map<string, { count: number; expires: number }>();
-
   // Note: Verify x-forwarded-for header handling matches your deployment environment
   // Different proxy setups may require adjusting how this header is processed
   const ip = c.req.header("x-forwarded-for") || "unknown";
@@ -41,28 +41,50 @@ export async function rateLimiter(
     let requests: number;
     let ttl: number;
 
-    // Use Redis pipeline to batch commands for better performance
-    // This reduces network roundtrips to Redis
-    const pipeline = redis.pipeline();
-    pipeline.incr(key);
-    pipeline.ttl(key);
+    // Check memory cache first to avoid Redis calls for frequent requests
+    const now = Date.now();
+    const cached = memCache.get(key);
 
-    const results = await pipeline.exec();
+    if (cached && cached.expires > now) {
+      // Use cached values if they haven't expired
+      requests = cached.count + 1;
+      ttl = Math.floor((cached.expires - now) / 1000);
 
-    if (!results || results.length < 2) {
-      // If pipeline fails, allow the request to proceed
-      console.error("Rate limiting pipeline error: Invalid results");
-      await next();
-      return undefined;
-    }
+      // Update the cache with incremented count
+      memCache.set(key, {
+        count: requests,
+        expires: cached.expires,
+      });
+    } else {
+      // Cache miss or expired, use Redis pipeline to batch commands for better performance
+      // This reduces network roundtrips to Redis
+      const pipeline = redis.pipeline();
+      pipeline.incr(key);
+      pipeline.ttl(key);
 
-    requests = results[0] as number;
-    ttl = results[1] as number;
+      const results = await pipeline.exec();
 
-    // Set expiry on first request
-    if (requests === 1 || ttl < 0) {
-      await redis.expire(key, RATE_LIMIT.windowMs / 1000);
-      ttl = RATE_LIMIT.windowMs / 1000;
+      if (!results || results.length < 2) {
+        // If pipeline fails, allow the request to proceed
+        console.error("Rate limiting pipeline error: Invalid results");
+        await next();
+        return undefined;
+      }
+
+      requests = results[0] as number;
+      ttl = results[1] as number;
+
+      // Set expiry on first request
+      if (requests === 1 || ttl < 0) {
+        await redis.expire(key, RATE_LIMIT.windowMs / 1000);
+        ttl = RATE_LIMIT.windowMs / 1000;
+      }
+
+      // Update memory cache with values from Redis
+      memCache.set(key, {
+        count: requests,
+        expires: now + ttl * 1000,
+      });
     }
 
     // Set rate limit headers
