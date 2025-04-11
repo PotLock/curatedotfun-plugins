@@ -33,7 +33,7 @@ The service includes rate limiting for public endpoints (GET requests):
 - Rate limit headers included in responses:
   - `X-RateLimit-Limit`: Maximum requests per window
   - `X-RateLimit-Remaining`: Remaining requests in current window
-  - `X-RateLimit-Reset`: Time when the rate limit resets
+  - `X-RateLimit-Reset`: Time when the rate limit resets.
 
 Write operations (POST, PUT) are protected by API key authentication and not rate-limited.
 

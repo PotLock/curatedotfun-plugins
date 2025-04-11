@@ -20,12 +20,15 @@ const RATE_LIMIT = {
 export async function rateLimiter(
   c: Context,
   next: Next,
-): Promise<Response | void> {
+): Promise<Response | undefined> {
   // Skip rate limiting for non-GET requests (they're protected by API key)
   if (c.req.method !== "GET") {
-    return next();
+    await next();
+    return undefined;
   }
 
+  // Note: Verify x-forwarded-for header handling matches your deployment environment
+  // Different proxy setups may require adjusting how this header is processed
   const ip = c.req.header("x-forwarded-for") || "unknown";
   const key = `ratelimit:${ip}`;
 
@@ -60,11 +63,13 @@ export async function rateLimiter(
       );
     }
 
-    return await next();
+    await next();
+    return undefined;
   } catch (error) {
     console.error("Rate limiting error:", error);
     // Continue on error to avoid blocking requests
-    return await next();
+    await next();
+    return undefined;
   }
 }
 
@@ -75,7 +80,7 @@ export async function rateLimiter(
 export async function securityHeaders(
   c: Context,
   next: Next,
-): Promise<Response | void> {
+): Promise<Response | undefined> {
   // Wait for response to be generated
   await next();
 
@@ -95,7 +100,7 @@ export async function securityHeaders(
 export async function requestTimeout(
   c: Context,
   next: Next,
-): Promise<Response | void> {
+): Promise<Response | undefined> {
   const TIMEOUT = 30000; // 30 seconds
 
   const timeoutPromise = new Promise((_, reject) => {
