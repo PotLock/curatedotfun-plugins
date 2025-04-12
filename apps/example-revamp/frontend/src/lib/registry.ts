@@ -1,7 +1,7 @@
 /**
  * Plugin registry operations
  */
-import { get, post } from './api';
+import { get, post } from "./api";
 
 // Define types for the registry
 export interface PluginMetadata {
@@ -25,10 +25,10 @@ export interface RegistryResponse {
  */
 export async function fetchPluginRegistry(): Promise<PluginRegistry> {
   try {
-    const { registry } = await get<RegistryResponse>('/plugin-registry');
+    const { registry } = await get<RegistryResponse>("/plugin-registry");
     return registry;
   } catch (error) {
-    console.error('Failed to fetch plugin registry:', error);
+    console.error("Failed to fetch plugin registry:", error);
     throw error;
   }
 }
@@ -36,12 +36,16 @@ export async function fetchPluginRegistry(): Promise<PluginRegistry> {
 /**
  * Update the plugin registry on the backend
  */
-export async function updatePluginRegistry(registry: PluginRegistry): Promise<PluginRegistry> {
+export async function updatePluginRegistry(
+  registry: PluginRegistry,
+): Promise<PluginRegistry> {
   try {
-    const response = await post<RegistryResponse>('/plugin-registry', { registry });
+    const response = await post<RegistryResponse>("/plugin-registry", {
+      registry,
+    });
     return response.registry;
   } catch (error) {
-    console.error('Failed to update plugin registry:', error);
+    console.error("Failed to update plugin registry:", error);
     throw error;
   }
 }
@@ -59,9 +63,9 @@ export function getAvailablePluginsByType(registry: PluginRegistry): {
   };
 
   Object.entries(registry).forEach(([name, metadata]) => {
-    if (metadata.type === 'transformer') {
+    if (metadata.type === "transformer") {
       result.transformer.push(name);
-    } else if (metadata.type === 'distributor') {
+    } else if (metadata.type === "distributor") {
       result.distributor.push(name);
     }
   });

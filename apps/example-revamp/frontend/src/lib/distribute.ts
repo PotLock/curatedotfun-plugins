@@ -1,7 +1,7 @@
 /**
  * Distribution operations
  */
-import { post } from './api';
+import { post } from "./api";
 
 // Define types for distribution operations
 export interface DistributePlugin {
@@ -28,14 +28,14 @@ export interface DistributeResult {
 
 /**
  * Distribute content using the configured distribution plugins
- * 
+ *
  * @param distributePlugins Array of distribution plugins with their configurations
  * @param content Content to distribute
  * @returns Distribution results
  */
 export async function distributeContent(
   distributePlugins: DistributePlugin[],
-  content: unknown
+  content: unknown,
 ): Promise<DistributeResult[]> {
   try {
     // Prepare the request payload
@@ -45,29 +45,34 @@ export async function distributeContent(
     };
 
     // Make the API request
-    const response = await post<DistributeResponse>('/distribute', requestPayload);
-    
+    const response = await post<DistributeResponse>(
+      "/distribute",
+      requestPayload,
+    );
+
     // Return the distribution results
     return response.results;
   } catch (error) {
-    console.error('Failed to distribute content:', error);
+    console.error("Failed to distribute content:", error);
     throw error;
   }
 }
 
 /**
  * Format distribution results for display
- * 
+ *
  * @param results Distribution results
  * @returns Formatted results as string
  */
 export function formatDistributionResults(results: DistributeResult[]): string {
-  return results.map(result => {
-    const status = result.success ? '✅' : '❌';
-    const message = result.success 
-      ? result.message || 'Success' 
-      : result.error || 'Failed';
-    
-    return `${status} ${result.plugin}: ${message}`;
-  }).join('\n');
+  return results
+    .map((result) => {
+      const status = result.success ? "✅" : "❌";
+      const message = result.success
+        ? result.message || "Success"
+        : result.error || "Failed";
+
+      return `${status} ${result.plugin}: ${message}`;
+    })
+    .join("\n");
 }

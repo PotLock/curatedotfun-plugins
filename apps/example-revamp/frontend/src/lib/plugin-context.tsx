@@ -1,6 +1,12 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { fetchPluginRegistry, PluginRegistry } from './registry';
-import toast from 'react-hot-toast';
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
+import { fetchPluginRegistry, PluginRegistry } from "./registry";
+import toast from "react-hot-toast";
 
 // Define the context type
 interface PluginContextType {
@@ -96,27 +102,28 @@ export function PluginProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      
+
       const registryData = await fetchPluginRegistry();
       setRegistry(registryData);
-      
+
       // Update available plugins
       const transformers = Object.entries(registryData)
-        .filter(([, metadata]) => metadata.type === 'transformer')
+        .filter(([, metadata]) => metadata.type === "transformer")
         .map(([name]) => name);
-      
+
       const distributors = Object.entries(registryData)
-        .filter(([, metadata]) => metadata.type === 'distributor')
+        .filter(([, metadata]) => metadata.type === "distributor")
         .map(([name]) => name);
-      
+
       setAvailablePlugins({
         transformer: transformers,
         distributor: distributors,
       });
-      
-      toast.success('Plugin registry loaded successfully');
+
+      toast.success("Plugin registry loaded successfully");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       setError(errorMessage);
       toast.error(`Failed to load plugin registry: ${errorMessage}`);
     } finally {

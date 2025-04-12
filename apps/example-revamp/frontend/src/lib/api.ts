@@ -5,10 +5,10 @@
 // Custom error class for API errors
 export class ApiError extends Error {
   status: number;
-  
+
   constructor(message: string, status: number) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
   }
 }
@@ -16,7 +16,7 @@ export class ApiError extends Error {
 // Default fetch options
 const defaultOptions: RequestInit = {
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 };
 
@@ -24,8 +24,8 @@ const defaultOptions: RequestInit = {
  * Generic fetch wrapper with error handling
  */
 export async function fetchApi<T = any>(
-  endpoint: string, 
-  options: RequestInit = {}
+  endpoint: string,
+  options: RequestInit = {},
 ): Promise<T> {
   try {
     const mergedOptions = {
@@ -38,13 +38,18 @@ export async function fetchApi<T = any>(
     };
 
     const response = await fetch(`/api${endpoint}`, mergedOptions);
-    
+
     // Handle non-2xx responses
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      throw new ApiError(errorData.message || `API error: ${response.status}`, response.status);
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
+      throw new ApiError(
+        errorData.message || `API error: ${response.status}`,
+        response.status,
+      );
     }
-    
+
     // Parse JSON response
     const data = await response.json();
     return data as T;
@@ -52,11 +57,11 @@ export async function fetchApi<T = any>(
     if (error instanceof ApiError) {
       throw error;
     }
-    
+
     // Handle network errors or other issues
     throw new ApiError(
-      error instanceof Error ? error.message : 'Unknown error occurred',
-      0
+      error instanceof Error ? error.message : "Unknown error occurred",
+      0,
     );
   }
 }
@@ -64,9 +69,12 @@ export async function fetchApi<T = any>(
 /**
  * HTTP GET request
  */
-export function get<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export function get<T = any>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
   return fetchApi<T>(endpoint, {
-    method: 'GET',
+    method: "GET",
     ...options,
   });
 }
@@ -74,9 +82,13 @@ export function get<T = any>(endpoint: string, options: RequestInit = {}): Promi
 /**
  * HTTP POST request
  */
-export function post<T = any>(endpoint: string, data: any, options: RequestInit = {}): Promise<T> {
+export function post<T = any>(
+  endpoint: string,
+  data: any,
+  options: RequestInit = {},
+): Promise<T> {
   return fetchApi<T>(endpoint, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(data),
     ...options,
   });
@@ -85,9 +97,13 @@ export function post<T = any>(endpoint: string, data: any, options: RequestInit 
 /**
  * HTTP PUT request
  */
-export function put<T = any>(endpoint: string, data: any, options: RequestInit = {}): Promise<T> {
+export function put<T = any>(
+  endpoint: string,
+  data: any,
+  options: RequestInit = {},
+): Promise<T> {
   return fetchApi<T>(endpoint, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(data),
     ...options,
   });
@@ -96,9 +112,12 @@ export function put<T = any>(endpoint: string, data: any, options: RequestInit =
 /**
  * HTTP DELETE request
  */
-export function del<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+export function del<T = any>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
   return fetchApi<T>(endpoint, {
-    method: 'DELETE',
+    method: "DELETE",
     ...options,
   });
 }
