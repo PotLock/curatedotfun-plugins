@@ -24,10 +24,13 @@ export default function PluginRegistry({
 
   const validateJson = (value: string) => {
     try {
-      if (value.trim()) {
-        JSON.parse(value);
+      const trimmedValue = value.trim();
+      if (!trimmedValue) {
         setIsValid(true);
+        return;
       }
+      JSON.parse(value);
+      setIsValid(true);
     } catch (error) {
       console.error("JSON Parsing Error:", error);
       setIsValid(false);
@@ -49,7 +52,11 @@ export default function PluginRegistry({
       <Textarea
         id="registryEditor"
         className="w-full h-60 p-4 border border-neutral-300 rounded-lg"
-        placeholder={loading ? "Loading registry data..." : "Enter your plugin JSON here..."}
+        placeholder={
+          loading
+            ? "Loading registry data..."
+            : "Enter your plugin JSON here..."
+        }
         value={registryData}
         onChange={handleChange}
         aria-invalid={!isValid}

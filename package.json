@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "turbo run dev --filter=@curatedotfun/example-revamp --filter=@curatedotfun/simple-transform --filter=@curatedotfun/ai-transform",
-    "dev:frontend": "cd apps/example/src/frontend && npm run dev",
+    "dev:frontend": "cd apps/example-revamp/frontend && npm run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",

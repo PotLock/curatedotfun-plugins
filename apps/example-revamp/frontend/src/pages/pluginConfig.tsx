@@ -50,8 +50,13 @@ export default function PluginConfig() {
         setDistributionPlugins(config.distribution || []);
       }
       setView(view === "json" ? "config" : "json");
-    } catch {
-      toast.error("Invalid JSON configuration");
+    } catch (error: unknown) {
+      toast.error(
+        `Invalid JSON configuration: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+      console.error("Error toggling view:", error);
     }
   };
 
@@ -66,8 +71,13 @@ export default function PluginConfig() {
             };
       localStorage.setItem("pluginConfig", JSON.stringify(config));
       toast.success("Configuration saved successfully!");
-    } catch {
-      toast.error("Error saving configuration");
+    } catch (error: unknown) {
+      toast.error(
+        `Error saving configuration: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+      console.error("Error saving configuration:", error);
     }
   };
 
@@ -92,6 +102,10 @@ export default function PluginConfig() {
       }));
 
       // Parse the content
+      if (!content.trim()) {
+        toast.error("Cannot transform empty content");
+        return;
+      }
       const parsedContent = parseContent(content);
 
       // Call the API to transform the content

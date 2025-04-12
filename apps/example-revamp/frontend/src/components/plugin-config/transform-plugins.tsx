@@ -66,7 +66,6 @@ const TransformPlugin = ({
   // Remove a plugin
   const removePlugin = (id: number) => {
     onPluginsChange(plugins.filter((plugin) => plugin.id !== id));
-    setCount(count - 1);
   };
 
   // Update plugin data
