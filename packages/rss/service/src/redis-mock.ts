@@ -237,15 +237,7 @@ export class RedisMock {
   getStorageState(): Record<string, any> {
     return Object.keys(inMemoryStorage).reduce(
       (acc, key) => {
-        if (Array.isArray(inMemoryStorage[key])) {
-          // For arrays, return the actual array contents
-          acc[key] = inMemoryStorage[key];
-        } else {
-          acc[key] =
-            typeof inMemoryStorage[key] === "string"
-              ? inMemoryStorage[key]
-              : inMemoryStorage[key];
-        }
+        acc[key] = inMemoryStorage[key];
         return acc;
       },
       {} as Record<string, any>,
