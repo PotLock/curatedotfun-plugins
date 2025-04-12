@@ -1,4 +1,9 @@
-import { RefreshCw, Save, Undo2 } from "lucide-react";
+import {
+  faArrowsRotate,
+  faFloppyDisk,
+  faRotateLeft,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -163,11 +168,17 @@ export default function PluginConfig() {
         <h1 className="text-3xl">Plugin Configuration</h1>
         <div className="flex items-center justify-start mt-5 gap-2">
           <Button variant="outline" onClick={toggleView} className="group">
-            <RefreshCw className="h-5 w-5 transition-transform duration-200 group-hover:rotate-90" />
+            <FontAwesomeIcon
+              icon={faArrowsRotate}
+              className="h-5 w-5 transition-transform duration-200 group-hover:rotate-90"
+            />
             <span>Switch to {view === "json" ? "Config" : "JSON"} View</span>
           </Button>
           <Button variant="outline" onClick={handleSave} className="group">
-            <Save className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+            <FontAwesomeIcon
+              icon={faFloppyDisk}
+              className="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
+            />
             <span>Save Configuration</span>
           </Button>
           <Button
@@ -175,7 +186,10 @@ export default function PluginConfig() {
             onClick={reset}
             className="group bg-transparent transition-all duration-200 hover:shadow-red-500/30 hover:shadow-xl hover:bg-red-500/10 hover:border-red-500/0"
           >
-            <Undo2 className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
+            <FontAwesomeIcon
+              icon={faRotateLeft}
+              className="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
+            />
             <span>Reset</span>
           </Button>
         </div>

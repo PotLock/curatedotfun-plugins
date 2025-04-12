@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import { Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,6 +11,8 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { usePluginContext } from "../../lib/plugin-context";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 
 // Define the Plugin type
 export type Plugin = {
@@ -105,7 +106,7 @@ const DistributionPlugin = ({
       <h2 className="pb-5 text-2xl">Distribution Plugins</h2>
 
       <Button variant="outline" onClick={addList}>
-        <Plus className="h-5 w-5" />
+        <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
         <span> Add Plugin</span>
       </Button>
 

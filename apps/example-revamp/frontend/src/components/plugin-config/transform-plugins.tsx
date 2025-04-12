@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
-import { Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -12,6 +11,8 @@ import {
 } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { usePluginContext } from "../../lib/plugin-context";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 
 // Define the Plugin type
 export type Plugin = {
@@ -103,7 +104,7 @@ const TransformPlugin = ({
 
       {/* Add Plugin Button */}
       <Button variant="outline" onClick={addPlugin}>
-        <Plus className="h-5 w-5" />
+        <FontAwesomeIcon icon={faPlus} className="h-5 w-5" />
         <span> Add Plugin</span>
       </Button>
 

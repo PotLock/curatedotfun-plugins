@@ -1,5 +1,6 @@
-import { ArrowDown } from "lucide-react";
 import { Button } from "./ui/button";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowDown } from "@fortawesome/free-solid-svg-icons";
 
 interface HeroProps {
   title: string;
@@ -21,7 +22,7 @@ export default function Hero({ title, description }: HeroProps) {
           className="rounded-full h-10 w-8 cursor-pointer border border-neutral-500"
           onClick={() => scrollToSection("config-panel")}
         >
-          <ArrowDown className="h-5 w-5  " />
+          <FontAwesomeIcon icon={faArrowDown} className="h-5 w-5 " />
         </Button>
       </div>
     </div>
