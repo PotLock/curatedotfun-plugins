@@ -1,24 +1,35 @@
 import { RefreshCw, Save, Undo2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { distributeContent, formatDistributionResults } from "../lib/distribute";
-import { usePluginContext } from "../lib/plugin-context";
-import { updatePluginRegistry } from "../lib/registry";
-import { formatTransformedContent, parseContent, transformContent } from "../lib/transform";
-import DistributionPlugin, { Plugin as DistributionPluginType } from "./plugin-config/distribution-plugins";
-import PluginRegistry from "./plugin-config/plugin-registry";
-import TransformPlugin, { Plugin as TransformPluginType } from "./plugin-config/transform-plugins";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
+import {
+  distributeContent,
+  formatDistributionResults,
+} from "../lib/distribute";
+import {
+  formatTransformedContent,
+  parseContent,
+  transformContent,
+} from "../lib/transform";
+import DistributionPlugin, {
+  Plugin as DistributionPluginType,
+} from "@/components/plugin-config/distribution-plugins";
+import TransformPlugin, {
+  Plugin as TransformPluginType,
+} from "@/components/plugin-config/transform-plugins";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function PluginConfig() {
-  const { refreshRegistry } = usePluginContext();
   const [view, setView] = useState<"json" | "config">("config");
   const [jsonConfig, setJsonConfig] = useState<string>("{}");
   const [content, setContent] = useState<string>("");
   const [transformedContent, setTransformedContent] = useState<string>("");
-  const [transformPlugins, setTransformPlugins] = useState<TransformPluginType[]>([]);
-  const [distributionPlugins, setDistributionPlugins] = useState<DistributionPluginType[]>([]);
+  const [transformPlugins, setTransformPlugins] = useState<
+    TransformPluginType[]
+  >([]);
+  const [distributionPlugins, setDistributionPlugins] = useState<
+    DistributionPluginType[]
+  >([]);
 
   const toggleView = () => {
     try {
@@ -64,27 +75,26 @@ export default function PluginConfig() {
     toast.success("Configuration reset successfully!");
   };
 
-
   const handleTransform = async () => {
     try {
       if (transformPlugins.length === 0)
         throw new Error("No transform plugins configured");
-      
+
       // Map transform plugins to the format expected by the API
-      const plugins = transformPlugins.map(plugin => ({
+      const plugins = transformPlugins.map((plugin) => ({
         plugin: plugin.type,
-        config: JSON.parse(plugin.content)
+        config: JSON.parse(plugin.content),
       }));
-      
+
       // Parse the content
       const parsedContent = parseContent(content);
-      
+
       // Call the API to transform the content
       const result = await transformContent(plugins, parsedContent);
-      
+
       // Format the transformed content for display
       const formattedContent = formatTransformedContent(result);
-      
+
       // Update the state
       setTransformedContent(formattedContent);
       toast.success("Transform completed successfully!");
@@ -99,24 +109,28 @@ export default function PluginConfig() {
     try {
       if (distributionPlugins.length === 0)
         throw new Error("No distribution plugins configured");
-      
+
       // Map distribution plugins to the format expected by the API
-      const plugins = distributionPlugins.map(plugin => ({
+      const plugins = distributionPlugins.map((plugin) => ({
         plugin: plugin.type,
-        config: JSON.parse(plugin.content)
+        config: JSON.parse(plugin.content),
       }));
-      
+
       // Parse the content if needed
-      const parsedContent = transformedContent ? parseContent(transformedContent) : {};
-      
+      const parsedContent = transformedContent
+        ? parseContent(transformedContent)
+        : {};
+
       // Call the API to distribute the content
       const results = await distributeContent(plugins, parsedContent);
-      
+
       // Format the results for display
       const formattedResults = formatDistributionResults(results);
-      
+
       // Show the results
-      toast.success(`Distribution completed successfully!\n${formattedResults}`);
+      toast.success(
+        `Distribution completed successfully!\n${formattedResults}`,
+      );
     } catch (error: unknown) {
       toast.error(
         `Distribution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -124,31 +138,27 @@ export default function PluginConfig() {
     }
   };
 
-  const handleRegistrySave = async (registryData: string) => {
-    try {
-      if (!registryData.trim()) {
-        throw new Error('Registry data is empty');
-      }
-      
-      // Parse the registry data
-      const registry = JSON.parse(registryData);
-      
-      // Update the registry on the server
-      await updatePluginRegistry(registry);
-      
-      // Refresh the registry in the context
-      await refreshRegistry();
-      
-      toast.success("Registry updated successfully!");
-    } catch (error) {
-      toast.error(
-        `Failed to update registry: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    }
-  };
-
   return (
     <div className="flex flex-col md:flex-row py-8 px-16 min-h-screen relative gap-14">
+      <div className="flex flex-col flex-1 gap-5 md:sticky top-0 h-fit max-h-screen py-10">
+        <div className="flex flex-col gap-5">
+          <h1 className="text-3xl">Content</h1>
+          <p>Enter your content below and use transform to modify it.</p>
+          <Textarea
+            placeholder="Enter your content..."
+            className="h-44"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+          {transformedContent && (
+            <div className="mt-4 p-4 border rounded-md bg-gray-50 whitespace-pre-wrap">
+              <h2 className="text-lg font-medium">Transformed Content:</h2>
+              {transformedContent}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div id="config-panel" className="flex flex-col gap-5 flex-1 w-full">
         <h1 className="text-3xl">Plugin Configuration</h1>
         <div className="flex items-center justify-start mt-5 gap-2">
@@ -178,48 +188,21 @@ export default function PluginConfig() {
           />
         ) : (
           <>
-            <TransformPlugin 
-              plugins={transformPlugins} 
-              onPluginsChange={setTransformPlugins} 
+            <TransformPlugin
+              plugins={transformPlugins}
+              onPluginsChange={setTransformPlugins}
             />
-            <DistributionPlugin 
-              plugins={distributionPlugins} 
-              onPluginsChange={setDistributionPlugins} 
+            <DistributionPlugin
+              plugins={distributionPlugins}
+              onPluginsChange={setDistributionPlugins}
             />
           </>
         )}
-        <PluginRegistry handleRegistrySave={handleRegistrySave} />
-      </div>
-
-      <div className="flex flex-col flex-1 gap-5 md:sticky top-0 h-fit max-h-screen py-10">
-        <div className="flex flex-col gap-5">
-          <h1 className="text-3xl">Content</h1>
-          <p>Enter your content below and use transform to modify it.</p>
-          <Textarea
-            placeholder="Enter your content..."
-            className="h-24"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
-          {transformedContent && (
-            <div className="mt-4 p-4 border rounded-md bg-gray-50 whitespace-pre-wrap">
-              <h2 className="text-lg font-medium">Transformed Content:</h2>
-              {transformedContent}
-            </div>
-          )}
+        <div className="flex items-center justify-end gap-5">
           <Button variant="outline" onClick={handleTransform}>
             Transform Content
           </Button>
-        </div>
-        <div className="flex flex-col gap-5">
-          <h1 className="text-3xl">Distribution</h1>
-          <p>
-            Click the button below to distribute the transformed content using
-            the configured plugins.
-          </p>
-          <Button variant="outline" onClick={handleDistribute}>
-            Distribute
-          </Button>
+          <Button onClick={handleDistribute}>Distribute</Button>
         </div>
       </div>
     </div>

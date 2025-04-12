@@ -25,23 +25,33 @@ interface DistributionPluginProps {
   onPluginsChange: (plugins: Plugin[]) => void;
 }
 
-const DistributionPlugin = ({ plugins, onPluginsChange }: DistributionPluginProps) => {
+const DistributionPlugin = ({
+  plugins,
+  onPluginsChange,
+}: DistributionPluginProps) => {
   const { availablePlugins, pluginDefaults } = usePluginContext();
   const [count, setCount] = useState(() => plugins.length);
-  
+
   // Initialize with default plugins when available plugins are loaded
   useEffect(() => {
     if (availablePlugins.distributor.length > 0 && plugins.length === 0) {
-      const initialPlugins = availablePlugins.distributor.slice(0, 3).map((pluginName, index) => ({
-        id: index,
-        type: pluginName,
-        content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
-      }));
-      
+      const initialPlugins = availablePlugins.distributor
+        .slice(0, 3)
+        .map((pluginName, index) => ({
+          id: index,
+          type: pluginName,
+          content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
+        }));
+
       onPluginsChange(initialPlugins);
       setCount(initialPlugins.length);
     }
-  }, [availablePlugins.distributor, pluginDefaults, plugins.length, onPluginsChange]);
+  }, [
+    availablePlugins.distributor,
+    pluginDefaults,
+    plugins.length,
+    onPluginsChange,
+  ]);
 
   const addList = () => {
     onPluginsChange([...plugins, { id: count, type: "", content: "" }]);
@@ -64,8 +74,8 @@ const DistributionPlugin = ({ plugins, onPluginsChange }: DistributionPluginProp
                 type: value,
                 content: JSON.stringify(pluginDefaults[value] || {}, null, 2),
               }
-            : list
-        )
+            : list,
+        ),
       );
     } else if (field === "content" && value.trim() !== "") {
       // Validate JSON for content updates
@@ -73,8 +83,8 @@ const DistributionPlugin = ({ plugins, onPluginsChange }: DistributionPluginProp
         JSON.parse(value);
         onPluginsChange(
           plugins.map((list) =>
-            list.id === id ? { ...list, content: value } : list
-          )
+            list.id === id ? { ...list, content: value } : list,
+          ),
         );
       } catch (error) {
         console.warn("Invalid JSON:", error);
@@ -84,14 +94,14 @@ const DistributionPlugin = ({ plugins, onPluginsChange }: DistributionPluginProp
       // For empty content or other fields
       onPluginsChange(
         plugins.map((list) =>
-          list.id === id ? { ...list, [field]: value } : list
-        )
+          list.id === id ? { ...list, [field]: value } : list,
+        ),
       );
     }
   };
 
   return (
-    <div className="flex flex-col items-start p-4 max-w-lg gap-2 border rounded-md w-full">
+    <div className="flex flex-col items-start p-4 gap-2 border rounded-md w-full">
       <h2 className="pb-5 text-2xl">Distribution Plugins</h2>
 
       <Button variant="outline" onClick={addList}>
@@ -117,7 +127,9 @@ const DistributionPlugin = ({ plugins, onPluginsChange }: DistributionPluginProp
                 <SelectGroup>
                   <SelectLabel>Distribution Plugins</SelectLabel>
                   {availablePlugins.distributor.length === 0 ? (
-                    <SelectItem value="" disabled>Loading plugins...</SelectItem>
+                    <SelectItem value="" disabled>
+                      Loading plugins...
+                    </SelectItem>
                   ) : (
                     availablePlugins.distributor.map((pluginName) => (
                       <SelectItem key={pluginName} value={pluginName}>

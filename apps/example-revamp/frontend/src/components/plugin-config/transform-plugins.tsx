@@ -25,27 +25,40 @@ interface TransformPluginProps {
   onPluginsChange: (plugins: Plugin[]) => void;
 }
 
-const TransformPlugin = ({ plugins, onPluginsChange }: TransformPluginProps) => {
+const TransformPlugin = ({
+  plugins,
+  onPluginsChange,
+}: TransformPluginProps) => {
   const { availablePlugins, pluginDefaults } = usePluginContext();
   const [count, setCount] = useState(() => plugins.length);
-  
+
   // Initialize with default plugins when available plugins are loaded
   useEffect(() => {
     if (availablePlugins.transformer.length > 0 && plugins.length === 0) {
-      const initialPlugins = availablePlugins.transformer.slice(0, 3).map((pluginName, index) => ({
-        id: index,
-        type: pluginName,
-        content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
-      }));
-      
+      const initialPlugins = availablePlugins.transformer
+        .slice(0, 3)
+        .map((pluginName, index) => ({
+          id: index,
+          type: pluginName,
+          content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
+        }));
+
       onPluginsChange(initialPlugins);
       setCount(initialPlugins.length);
     }
-  }, [availablePlugins.transformer, pluginDefaults, plugins.length, onPluginsChange]);
+  }, [
+    availablePlugins.transformer,
+    pluginDefaults,
+    plugins.length,
+    onPluginsChange,
+  ]);
 
   // Add a new plugin
   const addPlugin = () => {
-    onPluginsChange([...plugins, { id: plugins.length, type: "", content: "" }]);
+    onPluginsChange([
+      ...plugins,
+      { id: plugins.length, type: "", content: "" },
+    ]);
     setCount(count + 1);
   };
 
@@ -71,21 +84,21 @@ const TransformPlugin = ({ plugins, onPluginsChange }: TransformPluginProps) => 
                 type: value,
                 content: JSON.stringify(pluginDefaults[value] || {}, null, 2),
               }
-            : plugin
-        )
+            : plugin,
+        ),
       );
     } else {
       // For content updates, just update the content
       onPluginsChange(
         plugins.map((plugin) =>
-          plugin.id === id ? { ...plugin, [field]: value } : plugin
-        )
+          plugin.id === id ? { ...plugin, [field]: value } : plugin,
+        ),
       );
     }
   };
 
   return (
-    <div className="flex flex-col items-start p-4 max-w-lg gap-2 border rounded-md w-full">
+    <div className="flex flex-col items-start p-4 gap-2 border rounded-md w-full">
       <h2 className="pb-5 text-2xl">Transform Plugins</h2>
 
       {/* Add Plugin Button */}
@@ -114,7 +127,9 @@ const TransformPlugin = ({ plugins, onPluginsChange }: TransformPluginProps) => 
                 <SelectGroup>
                   <SelectLabel>Transform Plugins</SelectLabel>
                   {availablePlugins.transformer.length === 0 ? (
-                    <SelectItem value="" disabled>Loading plugins...</SelectItem>
+                    <SelectItem value="" disabled>
+                      Loading plugins...
+                    </SelectItem>
                   ) : (
                     availablePlugins.transformer.map((pluginName) => (
                       <SelectItem key={pluginName} value={pluginName}>
