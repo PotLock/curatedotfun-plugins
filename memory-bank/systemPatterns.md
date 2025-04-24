@@ -63,7 +63,7 @@ curatedotfun-plugins/
    - Defines the contract that all plugins must implement
    - Provides type definitions for plugin configuration and operations
 
-2. **Plugin Manager (apps/example)**:
+2. **Plugin Manager (apps/plugin-manager)**:
    - Provides a UI for managing and testing plugins
    - Handles plugin registration and configuration
    - Facilitates testing of transform and distribute operations

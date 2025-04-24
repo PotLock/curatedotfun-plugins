@@ -53,14 +53,14 @@ bun run dev --filter=@curatedotfun/plugin-name
 
 #### Plugin Manager
 
-A development tool is included in `apps/example` that helps you test and manage plugins. It provides:
+A development tool is included in `apps/plugin-manager` that helps you test and manage plugins. It provides:
 
 - Runtime plugin loading without installation
 - Plugin registry management through UI
 - Transform and distribute testing
 - Environment variable configuration
 
-See [Plugin Manager Documentation](apps/example/README.md) for details on testing your remote plugins locally.
+See [Plugin Manager Documentation](apps/plugin-manager/README.md) for details on testing your remote plugins locally.
 
 ### Building
 

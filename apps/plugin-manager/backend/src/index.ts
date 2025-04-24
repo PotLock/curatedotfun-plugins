@@ -16,7 +16,7 @@ async function main() {
   const pluginService = new PluginService(getPluginByName);
 
   // Serve static frontend files
-  app.use(express.static(path.join(__dirname, "../dist")));
+  app.use(express.static(path.join(__dirname, "./public")));
   app.use(express.json());
 
   // Distribution endpoint
