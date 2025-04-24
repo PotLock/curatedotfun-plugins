@@ -6,131 +6,86 @@ sidebar_position: 2
 
 Deploy your curate.fun instance to production ⚡
 
-## 🌥️ Deploying to Fly.io
+## 🚂 Deploying to Railway (Recommended)
 
-The backend service can be deployed to Fly.io with SQLite support.
+The backend service can be deployed to Railway using their built-in Postgres service. This service also serves the frontend dashboard.
 
 ### 📋 Prerequisites
 
-Install the Fly CLI:
+- A [Railway](https://railway.app/) account
+- A GitHub account (optional, for CI/CD setup)
 
-```bash
-# 🍎 macOS
-brew install flyctl
+### 🚀 Quick Deployment
 
-# 🪟 Windows
-powershell -Command "iwr https://fly.io/install.ps1 -useb | iex"
+The fastest way to deploy is using the Railway template:
 
-# 🐧 Linux
-curl -L https://fly.io/install.sh | sh
-```
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/RiUi5U?referralCode=3O4l1-)
 
-### 🔑 Authentication
+### ⚙️ Configuration
 
-Sign up and authenticate with Fly.io:
+After deploying the template, you'll need to configure the following environment variables in the Railway dashboard:
 
-```bash
-fly auth signup
-# or
-fly auth login
-```
+#### Required Environment Variables
 
-### 🛫 Deployment Steps
+- `TWITTER_USERNAME`: Your Twitter username.
+- `TWITTER_PASSWORD`: Your Twitter password.
+- `TWITTER_EMAIL`: Your Twitter email.
+- `TWITTER_2FA`: Your Twitter 2FA code.
 
-1. 🎬 Initialize your Fly.io application:
+#### Optional Environment Variables
 
-```bash
-bun run deploy:init
-```
+- `TELEGRAM_BOT_TOKEN`: Your Telegram bot token (required for the [Telegram plugin](../plugins/distributors/telegram.md)).
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (required for the [AI Transform plugin](../plugins/transformers/ai-transform.md)).
 
-This will:
+### 🔧 Customization
 
-- 📦 Create the Fly App
-- 💾 Set up LiteFS volume ([LiteFS Speedrun](https://fly.io/docs/litefs/speedrun/))
-- 🔄 Attach Consul for LiteFS cluster management
-
-2. ⚙️ Configure environment variables:
-
-```bash
-# 🐦 Twitter Authentication
-fly secrets set TWITTER_USERNAME=your_twitter_username
-fly secrets set TWITTER_PASSWORD=your_twitter_password
-fly secrets set TWITTER_EMAIL=your_twitter_email
-
-# 📢 Distribution Services
-fly secrets set TELEGRAM_BOT_TOKEN=your_bot_token
-fly secrets set TELEGRAM_CHANNEL_ID=your_channel_id
-```
-
-3. 🚀 Deploy the application:
-
-```bash
-bun run deploy
-```
-
-### 🏗️ Architecture
-
-- ✨ Distributed SQLite using LiteFS
-- 🔄 Automatic file replication across instances
-- 🎯 Primary/replica configuration using Consul
-- 🔒 HTTPS enabled by default
-
-#### 🔍 Details
-
-- 📍 Primary instance (LAX region) handles write operations
-- 🔄 Replicas automatically sync data from primary
-- 🎛️ Consul manages primary/replica coordination
-- ⚡ Automatic failover if primary becomes unavailable
-
-#### 📁 Key Files
-
-- `fly.toml`: Main Fly.io configuration
-- `litefs.yml`: LiteFS configuration
-- `Dockerfile`: Container and LiteFS setup
-
-### 📊 Monitoring
-
-Monitor your deployment:
-
-```bash
-# 👀 View deployment status
-fly status
-
-# 📝 View logs
-fly logs
-
-# 🖥️ Access dashboard
-fly dashboard
-```
+You'll need to customize your `curate.config.json` file to match your specific curation needs. See the [configuration documentation](./configuration.md) for details on how to set up your configuration.
 
 ### 🔧 Troubleshooting
 
 Common issues and solutions:
 
-1. **🗄️ Container issues**
+1. **Database Connection Issues**
+   - Verify that the Postgres service is properly linked to your application
+   - Check the connection string in the environment variables (`DATABASE_URL` should be a shared environment variable `${{ Postgres.DATABASE_URL }}`)
 
-   ```bash
-   # Explore container
-   fly ssh console
-   
-   # Verify Consul
-   fly consul status
-   
-   # Check status
-   fly logs
-   ```
+2. **Twitter Authentication Problems**
+   - Ensure all Twitter credentials are correctly set in the environment variables
+   - If locked out, use Twitter cookies instead
 
-3. **💻 Scale up or downtown**
-
-   ```bash
-   # Increase count (# is number of machines)
-   fly scale count #
-   
-   # Check distribution
-   fly scale show
-   ```
+3. **Deployment Failures**
+   - Check the deployment logs in the Railway dashboard
+   - Verify that your repository has the correct structure and dependencies
 
 📚 For more help:
 
-- [Fly.io Documentation](https://fly.io/docs/)
-- [Community Discord](https://fly.io/discord)
+- [Railway Documentation](https://docs.railway.app/)
+- [Railway Discord Community](https://discord.com/invite/railway)
+
+## 🐳 Alternative Deployment Options
+
+### Using Docker with External Postgres
+
+You can deploy the application using the [Dockerfile](https://github.com/PotLock/curatedotfun/blob/main/Dockerfile) and connect it to your own Postgres database:
+
+1. **Build the Docker image**:
+
+   ```bash
+   docker build -t curatedotfun .
+   ```
+
+2. **Run the container with environment variables**:
+
+   ```bash
+   docker run -d \
+     -p 3000:3000 \
+     -e DATABASE_URL=postgres://username:password@host:port/database \
+     -e TWITTER_USERNAME=your_twitter_username \
+     -e TWITTER_PASSWORD=your_twitter_password \
+     -e TWITTER_EMAIL=your_twitter_email \
+     -e TWITTER_2FA=your_twitter_2fa \
+     --name curatedotfun \
+     curatedotfun
+   ```
+
+This approach works with any hosting provider that supports Docker containers, such as [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform), [AWS App Runner](https://aws.amazon.com/apprunner/), [Google Cloud Run](https://cloud.google.com/run), or [Azure Container Instances](https://azure.microsoft.com/en-us/products/container-instances).
