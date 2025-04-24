@@ -40,6 +40,10 @@ let pluginRegistry: Record<string, PluginMetadata> = {
     url: "http://localhost:3009/remoteEntry.js",
     type: "distributor",
   },
+  "@curatedotfun/crosspost": {
+    url: "http://localhost:3010/remoteEntry.js",
+    type: "distributor",
+  },
 };
 
 export function getPluginByName(name: string): PluginMetadata | undefined {
