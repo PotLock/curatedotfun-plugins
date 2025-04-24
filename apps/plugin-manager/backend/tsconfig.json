@@ -12,12 +12,12 @@
   },
   "include": [
     "src/**/*",
-    "../example-revamp/frontend/vite.config.ts",
-    "../example-revamp/frontend/tsconfig.json",
-    "../example-revamp/frontend/tsconfig.node.json",
-    "../example-revamp/frontend/tsconfig.app.json",
-    "../example-revamp/frontend/eslint.config.js",
-    "../example-revamp/frontend/src"
+    "../plugin-manager/frontend/vite.config.ts",
+    "../plugin-manager/frontend/tsconfig.json",
+    "../plugin-manager/frontend/tsconfig.node.json",
+    "../plugin-manager/frontend/tsconfig.app.json",
+    "../plugin-manager/frontend/eslint.config.js",
+    "../plugin-manager/frontend/src"
   ],
   "exclude": ["node_modules", "dist"]
 }

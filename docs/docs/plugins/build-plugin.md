@@ -17,7 +17,7 @@ You can create three types of plugins:
 ## Development Tools
 
 :::tip
-We provide a [Plugin Manager](https://github.com/PotLock/curatedotfun-plugins/tree/main/apps/example) for local development and testing. This tool allows you to test plugins without installing them in a project.
+We provide a [Plugin Manager](https://github.com/PotLock/curatedotfun-plugins/tree/main/apps/plugin-manager) for local development and testing. This tool allows you to test plugins without installing them in a project.
 :::
 
 ### Plugin Manager Features

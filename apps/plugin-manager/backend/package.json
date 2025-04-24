@@ -1,5 +1,5 @@
 {
-  "name": "@curatedotfun/example",
+  "name": "@curatedotfun/plugin-manager-backend",
   "version": "0.0.1",
   "private": true,
   "scripts": {

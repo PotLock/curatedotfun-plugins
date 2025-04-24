@@ -27,7 +27,7 @@
     // Path aliases for intuitive imports
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./apps/example/src/frontend/src/*"]
+      "@/*": ["./apps/plugin-manager/src/frontend/src/*"]
     }
   }
 }
