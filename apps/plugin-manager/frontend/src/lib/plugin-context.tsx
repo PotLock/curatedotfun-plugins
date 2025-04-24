@@ -69,6 +69,9 @@ export const PLUGIN_DEFAULTS: Record<string, Record<string, unknown>> = {
     privateKey: "{NEAR_PRIVATE_KEY}",
     networkId: "testnet",
   },
+  "@curatedotfun/crosspost": {
+    keyPair: "{CROSSPOST_KEY}",
+  },
 };
 
 // Create the context with default values
