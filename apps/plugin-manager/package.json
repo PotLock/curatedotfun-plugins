@@ -1,0 +1,23 @@
+{
+  "name": "@curatedotfun/plugin-manager",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"cd frontend && bun run dev\" \"cd backend && bun run dev\"",
+    "build": "concurrently \"cd frontend && bun run build\" \"cd backend && bun run build\"",
+    "start": "cd backend && bun run preview"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "concurrently": "^9.1.2",
+    "wait-on": "^8.0.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}

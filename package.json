@@ -9,9 +9,9 @@
     "docs"
   ],
   "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "lint": "turbo lint",
+    "dev": "turbo run dev --filter=@curatedotfun/plugin-manager --filter=@curatedotfun/simple-transform --filter=@curatedotfun/object-transform --filter=@curatedotfun/ai-transform",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
     "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",
     "fmt:check": "prettier --check '**/*.{js,jsx,ts,tsx,json}'",
     "docs": "cd docs && npx docusaurus start",
@@ -21,6 +21,12 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "prettier": "^3.3.3",
-    "turbo": "latest"
+    "turbo": "^2.4.3",
+    "@types/bun": "latest"
+  },
+  "module": "index.ts",
+  "type": "module",
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   }
 }

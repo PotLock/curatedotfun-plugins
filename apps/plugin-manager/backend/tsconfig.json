@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "src/**/*",
+    "../plugin-manager/frontend/vite.config.ts",
+    "../plugin-manager/frontend/tsconfig.json",
+    "../plugin-manager/frontend/tsconfig.node.json",
+    "../plugin-manager/frontend/tsconfig.app.json",
+    "../plugin-manager/frontend/eslint.config.js",
+    "../plugin-manager/frontend/src"
+  ],
+  "exclude": ["node_modules", "dist"]
+}
