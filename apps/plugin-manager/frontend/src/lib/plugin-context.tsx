@@ -71,6 +71,7 @@ export const PLUGIN_DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   "@curatedotfun/crosspost": {
     keyPair: "{CROSSPOST_KEY}",
+    targets: [{ platform: "your-platform", userId: "your-userid" }],
   },
 };
 

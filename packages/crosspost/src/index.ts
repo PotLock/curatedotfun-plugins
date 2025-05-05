@@ -1,5 +1,5 @@
 import { CrosspostClient } from "@crosspost/sdk";
-import { Platform } from "@crosspost/types";
+import { Platform, PostContent, Target } from "@crosspost/types";
 import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
 import * as near from "near-api-js";
 import {
@@ -11,11 +11,12 @@ import * as borsh from "borsh";
 
 interface CrosspostConfig {
   keyPair: string;
-  [key: string]: string | undefined;
+  targets: Target[];
+  [key: string]: unknown | undefined;
 }
 
 export default class CrosspostPlugin
-  implements DistributorPlugin<string, CrosspostConfig> {
+  implements DistributorPlugin<PostContent[], CrosspostConfig> {
   readonly type = "distributor" as const;
   private config: CrosspostConfig | null = null;
   private client: CrosspostClient | null = null;
@@ -37,8 +38,7 @@ export default class CrosspostPlugin
 
   async distribute({
     input
-  }: ActionArgs<string, CrosspostConfig>): Promise<void> {
-    console.log("input", input);
+  }: ActionArgs<PostContent[], CrosspostConfig>): Promise<void> {
     if (!this.config) {
       throw new Error("Crosspost plugin requires configuration.");
     }
@@ -50,7 +50,7 @@ export default class CrosspostPlugin
     const message = "Post";
     const nonce = generateNonce();
     const recipient = "crosspost.near";
-    const accountId = this.config.accountId;
+    const accountId = "efiz.near";
     let authData: NearAuthData;
 
     try {
@@ -105,13 +105,8 @@ export default class CrosspostPlugin
       this.client.setAuthentication(authData);
 
       this.client.post.createPost({
-        targets: [{
-          platform: Platform.TWITTER,
-          userId: "1603425135356157953"
-        }],
-        content: [{
-          text: String(input)
-        }]
+        targets: this.config.targets as Target[],
+        content: input
       })
 
     } catch (e) {
