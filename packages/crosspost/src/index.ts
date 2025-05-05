@@ -10,6 +10,7 @@ import { generateNonce, NearAuthData, uint8ArrayToBase64 } from "near-sign-verif
 import * as borsh from "borsh";
 
 interface CrosspostConfig {
+  signerId: string;
   keyPair: string;
   targets: Target[];
   [key: string]: unknown | undefined;
@@ -26,13 +27,15 @@ export default class CrosspostPlugin
       throw new Error("Crosspost plugin requires configuration.");
     }
 
+    if (!config.signerId) {
+      throw new Error("Crosspost plugin requires signerId.");
+    }
+
     if (!config.keyPair) {
       throw new Error("Crosspost plugin requires access key.");
     }
 
-    this.client = new CrosspostClient({
-      baseUrl: "https://open-crosspost-proxy.deno.dev"
-    });
+    this.client = new CrosspostClient();
     this.config = config;
   }
 
@@ -50,7 +53,7 @@ export default class CrosspostPlugin
     const message = "Post";
     const nonce = generateNonce();
     const recipient = "crosspost.near";
-    const accountId = "efiz.near";
+    const accountId = this.config.signerId;
     let authData: NearAuthData;
 
     try {
