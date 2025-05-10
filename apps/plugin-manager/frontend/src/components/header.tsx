@@ -6,7 +6,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faBook } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "./ui/button";
-import { useNavigate } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -38,7 +38,7 @@ const socials = [
 ];
 
 export default function Header() {
-  const navigate = useNavigate();
+  const history = useHistory();
   return (
     <div className="flex px-16 py-4 border-b-4 border-black gap-2.5 justify-between items-center w-full">
       {/* Left side: Logo + Navigation */}
@@ -73,7 +73,7 @@ export default function Header() {
             <FontAwesomeIcon icon={social.icon} size="lg" />
           </a>
         ))}
-        <Button onClick={() => navigate("/plugin-registry")}>
+        <Button onClick={() => history.push("/plugin-registry")}>
           Plugin Registery
         </Button>
       </div>
