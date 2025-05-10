@@ -27,8 +27,8 @@ import { Textarea } from "@/components/ui/textarea";
 export default function PluginConfig() {
   const [view, setView] = useState<"json" | "config">("config");
   const [jsonConfig, setJsonConfig] = useState<string>("{}");
-  const [content, setContent] = useState<string>("");
-  const [transformedContent, setTransformedContent] = useState<string>("");
+  const [currentContent, setCurrentContent] = useState<string>("");
+  const [originalContentSnapshot, setOriginalContentSnapshot] = useState<string | null>(null);
   const [transformPlugins, setTransformPlugins] = useState<
     TransformPluginType[]
   >([]);
@@ -83,8 +83,8 @@ export default function PluginConfig() {
 
   const reset = () => {
     setJsonConfig("{}");
-    setContent("");
-    setTransformedContent("");
+    setCurrentContent("");
+    setOriginalContentSnapshot(null);
     setTransformPlugins([]);
     setDistributionPlugins([]);
     toast.success("Configuration reset successfully!");
@@ -92,67 +92,107 @@ export default function PluginConfig() {
 
   const handleTransform = async () => {
     try {
-      if (transformPlugins.length === 0)
-        throw new Error("No transform plugins configured");
+      if (transformPlugins.length === 0) {
+        toast.error("No transform plugins configured");
+        return;
+      }
 
-      // Map transform plugins to the format expected by the API
-      const plugins = transformPlugins.map((plugin) => ({
-        plugin: plugin.type,
-        config: JSON.parse(plugin.content),
-      }));
-
-      // Parse the content
-      if (!content.trim()) {
+      if (!currentContent.trim()) {
         toast.error("Cannot transform empty content");
         return;
       }
-      const parsedContent = parseContent(content);
+      
+      setOriginalContentSnapshot(currentContent); // Snapshot before transforming
 
-      // Call the API to transform the content
-      const result = await transformContent(plugins, parsedContent);
+      let contentToProcess = parseContent(currentContent);
+      let lastSuccessfulContent = currentContent; // Keep track of last raw string content
 
-      // Format the transformed content for display
-      const formattedContent = formatTransformedContent(result);
-
-      // Update the state
-      setTransformedContent(formattedContent);
-      toast.success("Transform completed successfully!");
+      for (const pluginConfig of transformPlugins) {
+        if (!pluginConfig.type) {
+          toast.error("A transform plugin is missing its type. Skipping.");
+          continue;
+        }
+        try {
+          const apiPluginPayload = {
+            plugin: pluginConfig.type,
+            config: JSON.parse(pluginConfig.content || "{}"),
+          };
+          
+          // transformContent expects an array of plugins, so wrap the current one
+          const result = await transformContent([apiPluginPayload], contentToProcess);
+          contentToProcess = result; // The result from API is already parsed (unknown type)
+          lastSuccessfulContent = formatTransformedContent(result); // Update for next iteration's potential string input
+          setCurrentContent(lastSuccessfulContent); // Update UI progressively
+          toast.success(`Plugin ${pluginConfig.type} applied.`);
+        } catch (pluginError) {
+          toast.error(
+            `Error applying plugin ${pluginConfig.type}: ${
+              pluginError instanceof Error ? pluginError.message : "Unknown error"
+            }. Stopping transformations.`,
+          );
+          // Revert to content before this failing plugin
+          setCurrentContent(formatTransformedContent(parseContent(lastSuccessfulContent)));
+          throw pluginError; // Or handle more gracefully, e.g., allow continuing with next
+        }
+      }
+      // Final content is already in setCurrentContent due to progressive updates
+      toast.success("All transformations completed successfully!");
     } catch (error: unknown) {
-      toast.error(
-        `Transform failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      // Catch errors from the loop or initial checks
+      // Specific plugin errors are toasted inside the loop
+      if (!(error instanceof Error && error.message.includes("Error applying plugin"))) {
+         toast.error(
+           `Transform failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+         );
+      }
     }
   };
 
   const handleDistribute = async () => {
     try {
-      if (distributionPlugins.length === 0)
-        throw new Error("No distribution plugins configured");
+      if (distributionPlugins.length === 0) {
+        toast.error("No distribution plugins configured");
+        return;
+      }
+
+      if (!currentContent.trim()) {
+        toast.error("Cannot distribute empty content");
+        return;
+      }
+
+      const parsedContentForDistribution = parseContent(currentContent);
 
       // Map distribution plugins to the format expected by the API
-      const plugins = distributionPlugins.map((plugin) => ({
-        plugin: plugin.type,
-        config: JSON.parse(plugin.content),
-      }));
-
-      // Parse the content if needed
-      const parsedContent = transformedContent
-        ? parseContent(transformedContent)
-        : {};
+      const plugins = distributionPlugins.map((plugin) => {
+        if (!plugin.type) {
+          throw new Error("A distribution plugin is missing its type.");
+        }
+        return {
+          plugin: plugin.type,
+          config: JSON.parse(plugin.content || "{}"),
+        };
+      });
 
       // Call the API to distribute the content
-      const results = await distributeContent(plugins, parsedContent);
-
-      // Format the results for display
+      const results = await distributeContent(plugins, parsedContentForDistribution);
       const formattedResults = formatDistributionResults(results);
 
-      // Show the results
-      toast.success(
-        `Distribution completed successfully!\n${formattedResults}`,
-      );
+      if (results.length === 0) {
+        toast.success("Distribution attempt completed. No results from plugins.");
+      } else {
+        const allSucceeded = results.every(r => r.success);
+        if (allSucceeded) {
+          toast.success(`All distributions successful:\n${formattedResults}`);
+        } else {
+          // Some or all individual plugin distributions failed
+          toast.error(`Distribution attempt had failures:\n${formattedResults}`);
+        }
+      }
     } catch (error: unknown) {
+      // This catch is for errors during setup (e.g., JSON.parse in map, missing type)
+      // or if distributeContent itself throws (e.g., network error, API 500)
       toast.error(
-        `Distribution failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Distribution operation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   };
@@ -166,13 +206,20 @@ export default function PluginConfig() {
           <Textarea
             placeholder="Enter your content..."
             className="h-44"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            value={currentContent}
+            onChange={(e) => {
+              setCurrentContent(e.target.value);
+              if (originalContentSnapshot !== null) {
+                setOriginalContentSnapshot(null); // Clear snapshot if user edits main content
+              }
+            }}
           />
-          {transformedContent && (
-            <div className="mt-4 p-4 border rounded-md bg-gray-50 whitespace-pre-wrap">
-              <h2 className="text-lg font-medium">Transformed Content:</h2>
-              {transformedContent}
+          {originalContentSnapshot && (
+            <div className="mt-4">
+              <h2 className="text-lg font-medium mb-2">Original Content (Snapshot):</h2>
+              <div className="p-4 border rounded-md bg-gray-100 dark:bg-gray-800 whitespace-pre-wrap text-sm">
+                {originalContentSnapshot}
+              </div>
             </div>
           )}
         </div>

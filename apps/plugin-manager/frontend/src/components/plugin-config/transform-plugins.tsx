@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import {
   Select,
@@ -31,44 +30,22 @@ const TransformPlugin = ({
   onPluginsChange,
 }: TransformPluginProps) => {
   const { availablePlugins, pluginDefaults } = usePluginContext();
-  const [count, setCount] = useState(() => plugins.length);
 
-  // Initialize with default plugins when available plugins are loaded
-  useEffect(() => {
-    if (availablePlugins.transformer.length > 0 && plugins.length === 0) {
-      const initialPlugins = availablePlugins.transformer
-        .slice(0, 3)
-        .map((pluginName, index) => ({
-          id: index,
-          type: pluginName,
-          content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
-        }));
-
-      onPluginsChange(initialPlugins);
-      setCount(initialPlugins.length);
-    }
-  }, [
-    availablePlugins.transformer,
-    pluginDefaults,
-    plugins.length,
-    onPluginsChange,
-  ]);
-
-  // Add a new plugin
   const addPlugin = () => {
+    // Ensure new IDs are unique, simple increment based on length might not be robust if items are reordered or have non-sequential IDs.
+    // A more robust way would be to find the max ID and add 1, or use a UUID.
+    // For now, assuming IDs are just for mapping and current length is sufficient for a new key.
+    const newId = plugins.length > 0 ? Math.max(...plugins.map(p => p.id)) + 1 : 0;
     onPluginsChange([
       ...plugins,
-      { id: plugins.length, type: "", content: "" },
+      { id: newId, type: "", content: "" },
     ]);
-    setCount(count + 1);
   };
 
-  // Remove a plugin
   const removePlugin = (id: number) => {
     onPluginsChange(plugins.filter((plugin) => plugin.id !== id));
   };
 
-  // Update plugin data
   const updatePlugin = (
     id: number,
     field: "type" | "content",
