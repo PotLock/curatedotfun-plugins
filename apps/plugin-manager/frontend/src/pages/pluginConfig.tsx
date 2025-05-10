@@ -110,14 +110,26 @@ export default function PluginConfig() {
       let lastSuccessfulContent = currentContent; // Keep track of last raw string content
 
       for (const pluginConfig of transformPlugins) {
+        // Fast-fail on invalid JSON
+        let parsedConfig: unknown;
+        try {
+          parsedConfig = JSON.parse(pluginConfig.content || "{}");
+        } catch (e) {
+          toast.error(
+            `Invalid JSON for plugin ${pluginConfig.type || "(unnamed)"}`,
+          );
+          continue; // or `return` if you prefer to stop the whole pipeline
+        }
+
         if (!pluginConfig.type) {
           toast.error("A transform plugin is missing its type. Skipping.");
           continue;
         }
+
         try {
           const apiPluginPayload = {
             plugin: pluginConfig.type,
-            config: JSON.parse(pluginConfig.content || "{}"),
+            config: parsedConfig,
           };
 
           // transformContent expects an array of plugins, so wrap the current one
