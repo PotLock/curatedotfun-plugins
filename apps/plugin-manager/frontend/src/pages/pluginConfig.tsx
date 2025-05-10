@@ -126,11 +126,11 @@ export default function PluginConfig() {
           continue;
         }
 
-      try {
-        const apiPluginPayload = {
-          plugin: pluginConfig.type,
-          config: parsedConfig as Record<string, unknown>,
-        };
+        try {
+          const apiPluginPayload = {
+            plugin: pluginConfig.type,
+            config: parsedConfig as Record<string, unknown>,
+          };
 
           // transformContent expects an array of plugins, so wrap the current one
           const result = await transformContent(
