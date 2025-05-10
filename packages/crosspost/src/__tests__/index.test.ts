@@ -17,19 +17,22 @@ import * as borsh from "borsh";
 
 // Mock dependencies
 vi.mock("@crosspost/sdk", () => ({
-  CrosspostClient: vi.fn().mockImplementation(() => ({
-    post: {
-      createPost: vi.fn(),
-      replyToPost: vi.fn(),
-      deletePost: vi.fn(),
-      likePost: vi.fn(),
-      unlikePost: vi.fn(),
-      repost: vi.fn(),
-      quotePost: vi.fn(),
-      // options: vi.fn(), // Removed explicit options mock, will use 'as any'
-    },
-    setAuthentication: vi.fn(),
-  } as any)), // Cast to any
+  CrosspostClient: vi.fn().mockImplementation(
+    () =>
+      ({
+        post: {
+          createPost: vi.fn(),
+          replyToPost: vi.fn(),
+          deletePost: vi.fn(),
+          likePost: vi.fn(),
+          unlikePost: vi.fn(),
+          repost: vi.fn(),
+          quotePost: vi.fn(),
+          // options: vi.fn(), // Removed explicit options mock, will use 'as any'
+        },
+        setAuthentication: vi.fn(),
+      }) as any,
+  ), // Cast to any
 }));
 
 vi.mock("near-api-js", async () => {
@@ -76,8 +79,10 @@ describe("CrosspostPlugin", () => {
     // Reset mocks before each test
     vi.clearAllMocks();
     // Re-mock CrosspostClient specifically for its methods if needed per test
-     vi.mocked(CrosspostClient).mockImplementation(() => ({
-        post: {
+    vi.mocked(CrosspostClient).mockImplementation(
+      () =>
+        ({
+          post: {
             createPost: vi.fn(),
             replyToPost: vi.fn(),
             deletePost: vi.fn(),
@@ -86,9 +91,10 @@ describe("CrosspostPlugin", () => {
             repost: vi.fn(),
             quotePost: vi.fn(),
             // options: vi.fn(), // Removed explicit options mock, will use 'as any'
-        },
-        setAuthentication: vi.fn(),
-    } as any)); // Cast to any
+          },
+          setAuthentication: vi.fn(),
+        }) as any,
+    ); // Cast to any
   });
 
   describe("initialize", () => {
@@ -99,8 +105,8 @@ describe("CrosspostPlugin", () => {
         method: "create" as const,
       };
       await expect(plugin.initialize(config)).resolves.toBeUndefined();
-      expect(plugin['config']).toEqual(config);
-      expect(plugin['client']).not.toBeNull(); // Changed assertion
+      expect(plugin["config"]).toEqual(config);
+      expect(plugin["client"]).not.toBeNull(); // Changed assertion
     });
 
     it("should initialize successfully with valid config for 'reply' method", async () => {
@@ -159,7 +165,7 @@ describe("CrosspostPlugin", () => {
 
     it("should throw error if config is not provided", async () => {
       await expect(plugin.initialize(undefined)).rejects.toThrow(
-        "Crosspost plugin requires configuration."
+        "Crosspost plugin requires configuration.",
       );
     });
 
@@ -170,7 +176,7 @@ describe("CrosspostPlugin", () => {
       };
       // @ts-expect-error testing invalid config
       await expect(plugin.initialize(config)).rejects.toThrow(
-        "Crosspost plugin requires signerId."
+        "Crosspost plugin requires signerId.",
       );
     });
 
@@ -181,7 +187,7 @@ describe("CrosspostPlugin", () => {
       };
       // @ts-expect-error testing invalid config
       await expect(plugin.initialize(config)).rejects.toThrow(
-        "Crosspost plugin requires access key."
+        "Crosspost plugin requires access key.",
       );
     });
 
@@ -192,7 +198,7 @@ describe("CrosspostPlugin", () => {
       };
       // @ts-expect-error testing invalid config
       await expect(plugin.initialize(config)).rejects.toThrow(
-        "Crosspost plugin requires 'method' in configuration."
+        "Crosspost plugin requires 'method' in configuration.",
       );
     });
 
@@ -203,41 +209,46 @@ describe("CrosspostPlugin", () => {
         method: "invalidMethod" as any,
       };
       await expect(plugin.initialize(config)).rejects.toThrow(
-        "Method must be one of: create, reply, delete, like, unlike, repost, quote"
+        "Method must be one of: create, reply, delete, like, unlike, repost, quote",
       );
     });
 
     it("should throw error if client method is unsupported (simulated)", async () => {
-        const config = {
-            signerId: "test.near",
-            keyPair: mockKeyPairString,
-            method: "create" as const,
-        };
-        // Simulate an unsupported method by temporarily altering the client mock
-        const originalClientMock = vi.mocked(CrosspostClient).getMockImplementation();
-        vi.mocked(CrosspostClient).mockImplementationOnce(() => ({
+      const config = {
+        signerId: "test.near",
+        keyPair: mockKeyPairString,
+        method: "create" as const,
+      };
+      // Simulate an unsupported method by temporarily altering the client mock
+      const originalClientMock = vi
+        .mocked(CrosspostClient)
+        .getMockImplementation();
+      vi.mocked(CrosspostClient).mockImplementationOnce(
+        () =>
+          ({
             post: {
-                // createPost is missing
+              // createPost is missing
             },
             setAuthentication: vi.fn(),
-        } as any));
+          }) as any,
+      );
 
-        await expect(plugin.initialize(config)).rejects.toThrow(
-            "Unsupported or invalid method: create"
-        );
-        // Restore original mock
-        if (originalClientMock) {
-            vi.mocked(CrosspostClient).mockImplementation(originalClientMock);
-        }
+      await expect(plugin.initialize(config)).rejects.toThrow(
+        "Unsupported or invalid method: create",
+      );
+      // Restore original mock
+      if (originalClientMock) {
+        vi.mocked(CrosspostClient).mockImplementation(originalClientMock);
+      }
     });
   });
 
   describe("distribute", () => {
     it("should throw error if plugin is not configured (config is null)", async () => {
-      plugin['config'] = null; // Simulate not initialized
+      plugin["config"] = null; // Simulate not initialized
       const inputArgs = { input: {}, config: {} as any };
       await expect(plugin.distribute(inputArgs)).rejects.toThrow(
-        "Crosspost plugin requires configuration."
+        "Crosspost plugin requires configuration.",
       );
     });
 
@@ -249,11 +260,11 @@ describe("CrosspostPlugin", () => {
         method: "create" as const,
       };
       await plugin.initialize(validConfig);
-      
-      plugin['client'] = null; // Simulate client not initialized
+
+      plugin["client"] = null; // Simulate client not initialized
       const inputArgs = { input: {}, config: validConfig };
       await expect(plugin.distribute(inputArgs)).rejects.toThrow(
-        "Crosspost plugin must be initialized."
+        "Crosspost plugin must be initialized.",
       );
     });
 
@@ -262,7 +273,7 @@ describe("CrosspostPlugin", () => {
       methodName: CrosspostMethod;
       schema: any; // Zod schema
       validInput: any;
-      clientMethodName: keyof CrosspostClient['post'];
+      clientMethodName: keyof CrosspostClient["post"];
     }> = [
       {
         methodName: "create",
@@ -278,7 +289,7 @@ describe("CrosspostPlugin", () => {
         schema: ReplyToPostRequestSchema,
         validInput: {
           targets: [{ platform: "twitter", userId: "testAccountId" }],
-          platform: "twitter", 
+          platform: "twitter",
           postId: "originalPostOnPlatform123",
           content: [{ text: "Nice post!" }],
         },
@@ -289,7 +300,9 @@ describe("CrosspostPlugin", () => {
         schema: DeletePostRequestSchema,
         validInput: {
           targets: [{ platform: "twitter", userId: "testAccountId" }],
-          posts: [{ platform: "twitter", userId: "testUser1", postId: "post123" }],
+          posts: [
+            { platform: "twitter", userId: "testUser1", postId: "post123" },
+          ],
         },
         clientMethodName: "deletePost",
       },
@@ -298,7 +311,7 @@ describe("CrosspostPlugin", () => {
         schema: LikePostRequestSchema,
         validInput: {
           targets: [{ platform: "twitter", userId: "testAccountId" }],
-          platform: "twitter", 
+          platform: "twitter",
           postId: "post123",
         },
         clientMethodName: "likePost",
@@ -308,7 +321,7 @@ describe("CrosspostPlugin", () => {
         schema: UnlikePostRequestSchema,
         validInput: {
           targets: [{ platform: "twitter", userId: "testAccountId" }],
-          platform: "twitter", 
+          platform: "twitter",
           postId: "post123",
         },
         clientMethodName: "unlikePost",
@@ -318,7 +331,7 @@ describe("CrosspostPlugin", () => {
         schema: RepostRequestSchema,
         validInput: {
           targets: [{ platform: "twitter", userId: "testAccountId" }],
-          platform: "twitter", 
+          platform: "twitter",
           postId: "post123",
         },
         clientMethodName: "repost",
@@ -328,7 +341,7 @@ describe("CrosspostPlugin", () => {
         schema: QuotePostRequestSchema,
         validInput: {
           targets: [{ platform: "twitter", userId: "testAccountId" }],
-          platform: "twitter", 
+          platform: "twitter",
           postId: "originalPostOnPlatform456",
           content: [{ text: "Great point!" }],
         },
@@ -348,38 +361,49 @@ describe("CrosspostPlugin", () => {
         beforeEach(async () => {
           // Ensure plugin is re-initialized for each method test
           plugin = new CrosspostPlugin();
-           vi.mocked(CrosspostClient).mockImplementation(() => ({
-            post: {
-                createPost: vi.fn(),
-                replyToPost: vi.fn(),
-                deletePost: vi.fn(),
-                likePost: vi.fn(),
-                unlikePost: vi.fn(),
-                repost: vi.fn(),
-                quotePost: vi.fn(),
-            },
-            setAuthentication: vi.fn(),
-          } as any));
+          vi.mocked(CrosspostClient).mockImplementation(
+            () =>
+              ({
+                post: {
+                  createPost: vi.fn(),
+                  replyToPost: vi.fn(),
+                  deletePost: vi.fn(),
+                  likePost: vi.fn(),
+                  unlikePost: vi.fn(),
+                  repost: vi.fn(),
+                  quotePost: vi.fn(),
+                },
+                setAuthentication: vi.fn(),
+              }) as any,
+          );
           await plugin.initialize(currentTestConfig);
         });
 
         it("should call the correct client method with validated input", async () => {
-          const mockClientInstance = plugin['client'] as any;
-          const specificClientMethodMock = mockClientInstance.post[clientMethodName];
+          const mockClientInstance = plugin["client"] as any;
+          const specificClientMethodMock =
+            mockClientInstance.post[clientMethodName];
 
-          await plugin.distribute({ input: validInput, config: currentTestConfig });
+          await plugin.distribute({
+            input: validInput,
+            config: currentTestConfig,
+          });
 
           expect(mockClientInstance.setAuthentication).toHaveBeenCalledOnce();
           // Further authData checks can be added here if needed
-          
+
           expect(specificClientMethodMock).toHaveBeenCalledOnce();
           expect(specificClientMethodMock).toHaveBeenCalledWith(validInput);
         });
 
         it("should throw ZodError for invalid input", async () => {
-          const invalidInput = { ...validInput, someRandomInvalidField: 123 }; 
+          const invalidInput = { ...validInput, someRandomInvalidField: 123 };
           // More specific invalid inputs per schema would be better
-          if (methodName === "create" || methodName === "reply" || methodName === "quote") {
+          if (
+            methodName === "create" ||
+            methodName === "reply" ||
+            methodName === "quote"
+          ) {
             delete invalidInput.content;
           } else if (methodName === "delete") {
             delete invalidInput.posts;
@@ -387,12 +411,14 @@ describe("CrosspostPlugin", () => {
             delete invalidInput.postId;
           }
 
-
           await expect(
-            plugin.distribute({ input: invalidInput, config: currentTestConfig })
+            plugin.distribute({
+              input: invalidInput,
+              config: currentTestConfig,
+            }),
           ).rejects.toThrow(/Invalid input for method/);
         });
-      }
+      },
     );
 
     it("should throw error if auth token creation fails", async () => {
@@ -405,50 +431,53 @@ describe("CrosspostPlugin", () => {
 
       // Simulate error during signing
       const mockedNear = vi.mocked(nearAPI.KeyPair);
-      mockedNear.fromString.mockImplementationOnce(() => ({
-        sign: vi.fn().mockImplementation(() => {
-          throw new Error("Signature failed");
-        }),
-        getPublicKey: vi.fn().mockReturnValue({
-            toString: vi.fn().mockReturnValue("ed25519:mockPublicKey"),
-        }),
-      } as any));
-
+      mockedNear.fromString.mockImplementationOnce(
+        () =>
+          ({
+            sign: vi.fn().mockImplementation(() => {
+              throw new Error("Signature failed");
+            }),
+            getPublicKey: vi.fn().mockReturnValue({
+              toString: vi.fn().mockReturnValue("ed25519:mockPublicKey"),
+            }),
+          }) as any,
+      );
 
       await expect(
         plugin.distribute({
-          input: { 
+          input: {
             targets: [{ platform: "twitter", userId: "testAccountId" }],
             content: [{ text: "test" }],
           },
           config,
-        })
+        }),
       ).rejects.toThrow("Error creating auth token: Signature failed");
     });
-    
+
     it("should throw error if borsh serialization fails", async () => {
-        const config = {
-            signerId: "borsh-fail.near",
-            keyPair: mockKeyPairString,
-            method: "create" as const,
-        };
-        await plugin.initialize(config);
-        
-        vi.mocked(borsh.serialize).mockImplementationOnce(() => {
-            throw new Error("Borsh serialization failed");
-        });
+      const config = {
+        signerId: "borsh-fail.near",
+        keyPair: mockKeyPairString,
+        method: "create" as const,
+      };
+      await plugin.initialize(config);
 
-        await expect(
-            plugin.distribute({
-              input: { 
-                targets: [{ platform: "twitter", userId: "testAccountId" }],
-                content: [{ text: "test" }],
-              },
-              config,
-            })
-        ).rejects.toThrow("Error creating auth token: Borsh serialization failed");
+      vi.mocked(borsh.serialize).mockImplementationOnce(() => {
+        throw new Error("Borsh serialization failed");
+      });
+
+      await expect(
+        plugin.distribute({
+          input: {
+            targets: [{ platform: "twitter", userId: "testAccountId" }],
+            content: [{ text: "test" }],
+          },
+          config,
+        }),
+      ).rejects.toThrow(
+        "Error creating auth token: Borsh serialization failed",
+      );
     });
-
 
     it("should throw error if client method call fails", async () => {
       const config = {
@@ -458,20 +487,22 @@ describe("CrosspostPlugin", () => {
       };
       await plugin.initialize(config);
 
-      const mockClientInstance = plugin['client'] as any;
+      const mockClientInstance = plugin["client"] as any;
       mockClientInstance.post.createPost.mockRejectedValueOnce(
-        new Error("Client API error")
+        new Error("Client API error"),
       );
 
       await expect(
         plugin.distribute({
-          input: { 
+          input: {
             targets: [{ platform: "twitter", userId: "testAccountId" }],
             content: [{ text: "test" }],
           },
           config,
-        })
-      ).rejects.toThrow("Error performing crosspost method 'create': Client API error");
+        }),
+      ).rejects.toThrow(
+        "Error performing crosspost method 'create': Client API error",
+      );
     });
   });
 });
