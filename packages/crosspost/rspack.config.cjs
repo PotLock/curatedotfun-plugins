@@ -46,7 +46,11 @@ module.exports = {
       exposes: {
         "./plugin": "./src/index.ts",
       },
-      shared: {},
+      shared: {
+        "@crosspost/sdk": { singleton: true, eager: false },
+        "near-api-js": { singleton: true, eager: false },
+        "@noble/hashes": { singleton: true, eager: false },
+      },
     }),
   ],
 };
