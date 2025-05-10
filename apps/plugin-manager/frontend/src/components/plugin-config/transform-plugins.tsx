@@ -93,7 +93,7 @@ const TransformPlugin = ({
             <h3 className="p-1 text-md">Plugin Name</h3>
             <Select
               value={plugin.type}
-              onValueChange={(value) => updatePlugin(plugin.id, "type", value)}
+              onValueChange={(value: string) => updatePlugin(plugin.id, "type", value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a Plugin Name" />

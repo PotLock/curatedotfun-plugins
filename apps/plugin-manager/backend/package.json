@@ -18,13 +18,14 @@
   "dependencies": {
     "@fontsource/londrina-solid": "^5.2.5",
     "@fontsource/roboto": "^5.2.5",
-    "@radix-ui/react-select": "^2.1.6",
-    "@radix-ui/react-slot": "^1.1.2",
-    "class-variance-authority": "^0.7.1",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@module-federation/node": "^2.7.2",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-slot": "^1.1.2",
+    "class-variance-authority": "^0.7.1",
     "react-hot-toast": "^2.5.2",
     "tailwind-merge": "^3.0.2",
     "tw-animate-css": "^1.2.4"

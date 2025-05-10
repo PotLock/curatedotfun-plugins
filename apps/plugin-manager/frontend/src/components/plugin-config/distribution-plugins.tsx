@@ -96,7 +96,7 @@ const DistributionPlugin = ({
             <h3 className="p-1 text-md">Plugin Name</h3>
             <Select
               value={list.type}
-              onValueChange={(value) => updateList(list.id, "type", value)}
+              onValueChange={(value: string) => updateList(list.id, "type", value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a Plugin Name" />

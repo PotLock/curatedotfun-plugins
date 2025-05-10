@@ -114,7 +114,7 @@ export default function PluginConfig() {
         let parsedConfig: unknown;
         try {
           parsedConfig = JSON.parse(pluginConfig.content || "{}");
-        } catch (e) {
+        } catch {
           toast.error(
             `Invalid JSON for plugin ${pluginConfig.type || "(unnamed)"}`,
           );
@@ -126,11 +126,11 @@ export default function PluginConfig() {
           continue;
         }
 
-        try {
-          const apiPluginPayload = {
-            plugin: pluginConfig.type,
-            config: parsedConfig,
-          };
+      try {
+        const apiPluginPayload = {
+          plugin: pluginConfig.type,
+          config: parsedConfig as Record<string, unknown>,
+        };
 
           // transformContent expects an array of plugins, so wrap the current one
           const result = await transformContent(
