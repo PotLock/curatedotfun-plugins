@@ -21,7 +21,7 @@ import {
 import { z } from "zod";
 
 // Define the allowed methods for the CrosspostPlugin
-type CrosspostMethod =
+export type CrosspostMethod =
   | "create"
   | "reply"
   | "delete"
