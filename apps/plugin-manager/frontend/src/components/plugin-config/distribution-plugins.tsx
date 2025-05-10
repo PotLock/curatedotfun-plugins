@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import {
   Select,
@@ -31,37 +30,15 @@ const DistributionPlugin = ({
   onPluginsChange,
 }: DistributionPluginProps) => {
   const { availablePlugins, pluginDefaults } = usePluginContext();
-  const [count, setCount] = useState(() => plugins.length);
-
-  // Initialize with default plugins when available plugins are loaded
-  useEffect(() => {
-    if (availablePlugins.distributor.length > 0 && plugins.length === 0) {
-      const initialPlugins = availablePlugins.distributor
-        .slice(0, 3)
-        .map((pluginName, index) => ({
-          id: index,
-          type: pluginName,
-          content: JSON.stringify(pluginDefaults[pluginName] || {}, null, 2),
-        }));
-
-      onPluginsChange(initialPlugins);
-      setCount(initialPlugins.length);
-    }
-  }, [
-    availablePlugins.distributor,
-    pluginDefaults,
-    plugins.length,
-    onPluginsChange,
-  ]);
 
   const addList = () => {
-    onPluginsChange([...plugins, { id: count, type: "", content: "" }]);
-    setCount(count + 1);
+    const newId =
+      plugins.length > 0 ? Math.max(...plugins.map((p) => p.id)) + 1 : 0;
+    onPluginsChange([...plugins, { id: newId, type: "", content: "" }]);
   };
 
   const removeList = (id: number) => {
     onPluginsChange(plugins.filter((list) => list.id !== id));
-    setCount(count - 1);
   };
 
   const updateList = (id: number, field: "type" | "content", value: string) => {
