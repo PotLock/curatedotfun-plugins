@@ -6,20 +6,29 @@ import {
   QuotePostRequestSchema,
   ReplyToPostRequestSchema,
   RepostRequestSchema,
-  UnlikePostRequestSchema
+  UnlikePostRequestSchema,
 } from "@crosspost/types";
 import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
-import {
-  type KeyPairString,
-} from '@near-js/crypto';
-import { sha256 } from '@noble/hashes/sha2';
+import { type KeyPairString } from "@near-js/crypto";
+import { sha256 } from "@noble/hashes/sha2";
 import * as borsh from "borsh";
 import * as near from "near-api-js";
-import { generateNonce, NearAuthData, uint8ArrayToBase64 } from "near-sign-verify";
-import { z } from 'zod';
+import {
+  generateNonce,
+  NearAuthData,
+  uint8ArrayToBase64,
+} from "near-sign-verify";
+import { z } from "zod";
 
 // Define the allowed methods for the CrosspostPlugin
-type CrosspostMethod = "create" | "reply" | "delete" | "like" | "unlike" | "repost" | "quote";
+type CrosspostMethod =
+  | "create"
+  | "reply"
+  | "delete"
+  | "like"
+  | "unlike"
+  | "repost"
+  | "quote";
 
 interface CrosspostConfig {
   signerId: string;
@@ -29,20 +38,24 @@ interface CrosspostConfig {
 }
 
 export default class CrosspostPlugin
-  implements DistributorPlugin<unknown, CrosspostConfig> {
+  implements DistributorPlugin<unknown, CrosspostConfig>
+{
   readonly type = "distributor" as const;
   private config: CrosspostConfig | null = null;
   private client: CrosspostClient | null = null;
 
   // Map from config method name to actual client method name
-  private readonly methodClientMap: Record<CrosspostMethod, keyof CrosspostClient['post']> = {
-    create: 'createPost',
-    reply: 'replyToPost',
-    delete: 'deletePost',
-    like: 'likePost',
-    unlike: 'unlikePost',
-    repost: 'repost',
-    quote: 'quotePost',
+  private readonly methodClientMap: Record<
+    CrosspostMethod,
+    keyof CrosspostClient["post"]
+  > = {
+    create: "createPost",
+    reply: "replyToPost",
+    delete: "deletePost",
+    like: "likePost",
+    unlike: "unlikePost",
+    repost: "repost",
+    quote: "quotePost",
   };
 
   async initialize(config?: CrosspostConfig): Promise<void> {
@@ -65,7 +78,10 @@ export default class CrosspostPlugin
     this.client = new CrosspostClient();
 
     const clientMethodName = this.methodClientMap[config.method];
-    if (!clientMethodName || typeof this.client.post[clientMethodName] !== 'function') {
+    if (
+      !clientMethodName ||
+      typeof this.client.post[clientMethodName] !== "function"
+    ) {
       throw new Error(`Unsupported or invalid method: ${config.method}`);
     }
 
@@ -73,50 +89,54 @@ export default class CrosspostPlugin
   }
 
   async distribute({
-    input
+    input,
   }: ActionArgs<unknown, CrosspostConfig>): Promise<void> {
     if (!this.config) {
       throw new Error("Crosspost plugin requires configuration.");
     }
 
     if (!this.client) {
-      throw new Error("Crosspost plugin must be initialized.")
+      throw new Error("Crosspost plugin must be initialized.");
     }
 
-    console.log("got input: ", input)
+    console.log("got input: ", input);
 
     const currentMethod = this.config.method;
     let validatedInput: any; // Will hold the sanitized input
 
     try {
       switch (currentMethod) {
-        case 'create':
+        case "create":
           validatedInput = CreatePostRequestSchema.parse(input);
           break;
-        case 'reply':
+        case "reply":
           validatedInput = ReplyToPostRequestSchema.parse(input);
           break;
-        case 'delete':
+        case "delete":
           validatedInput = DeletePostRequestSchema.parse(input);
           break;
-        case 'like':
+        case "like":
           validatedInput = LikePostRequestSchema.parse(input);
           break;
-        case 'unlike':
+        case "unlike":
           validatedInput = UnlikePostRequestSchema.parse(input);
           break;
-        case 'repost':
+        case "repost":
           validatedInput = RepostRequestSchema.parse(input);
           break;
-        case 'quote':
+        case "quote":
           validatedInput = QuotePostRequestSchema.parse(input);
           break;
         default:
-          throw new Error(`Schema validation not implemented for method: ${currentMethod}`);
+          throw new Error(
+            `Schema validation not implemented for method: ${currentMethod}`,
+          );
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
-        throw new Error(`Invalid input for method '${currentMethod}': ${err.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`);
+        throw new Error(
+          `Invalid input for method '${currentMethod}': ${err.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")}`,
+        );
       }
       throw err; // Re-throw other errors
     }
@@ -128,7 +148,9 @@ export default class CrosspostPlugin
     let authData: NearAuthData;
 
     try {
-      const signer = near.KeyPair.fromString(this.config.keyPair as KeyPairString);
+      const signer = near.KeyPair.fromString(
+        this.config.keyPair as KeyPairString,
+      );
 
       // Create the payload with the same structure as in verifySignature
       const TAG = 2147484061; // Same TAG value used in the backend
@@ -159,7 +181,9 @@ export default class CrosspostPlugin
       const payloadHash = sha256(serializedPayload);
 
       // Sign the hashed payload
-      const signedMessage = signer.sign(payloadHash as unknown as Uint8Array<ArrayBuffer>);
+      const signedMessage = signer.sign(
+        payloadHash as unknown as Uint8Array<ArrayBuffer>,
+      );
 
       authData = {
         message,
@@ -172,8 +196,8 @@ export default class CrosspostPlugin
         public_key: signedMessage.publicKey.toString(),
       };
     } catch (e) {
-      console.log("Error creating auth token...", e)
-      throw new Error("Error creating auth token.")
+      console.log("Error creating auth token...", e);
+      throw new Error("Error creating auth token.");
     }
 
     try {
@@ -182,12 +206,15 @@ export default class CrosspostPlugin
       const clientMethodName = this.methodClientMap[currentMethod];
 
       // Call the appropriate method with the validated input
-      await (this.client.post[clientMethodName] as (request: any) => Promise<any>)(validatedInput);
-
+      await (
+        this.client.post[clientMethodName] as (request: any) => Promise<any>
+      )(validatedInput);
     } catch (e) {
       const err = e as Error;
       console.log(`Error during crosspost method '${currentMethod}':`, err);
-      throw new Error(`Error performing crosspost method '${currentMethod}': ${err.message}`);
+      throw new Error(
+        `Error performing crosspost method '${currentMethod}': ${err.message}`,
+      );
     }
   }
 }

@@ -35,11 +35,9 @@ const TransformPlugin = ({
     // Ensure new IDs are unique, simple increment based on length might not be robust if items are reordered or have non-sequential IDs.
     // A more robust way would be to find the max ID and add 1, or use a UUID.
     // For now, assuming IDs are just for mapping and current length is sufficient for a new key.
-    const newId = plugins.length > 0 ? Math.max(...plugins.map(p => p.id)) + 1 : 0;
-    onPluginsChange([
-      ...plugins,
-      { id: newId, type: "", content: "" },
-    ]);
+    const newId =
+      plugins.length > 0 ? Math.max(...plugins.map((p) => p.id)) + 1 : 0;
+    onPluginsChange([...plugins, { id: newId, type: "", content: "" }]);
   };
 
   const removePlugin = (id: number) => {

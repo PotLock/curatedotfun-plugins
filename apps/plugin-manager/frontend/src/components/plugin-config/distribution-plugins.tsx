@@ -32,7 +32,8 @@ const DistributionPlugin = ({
   const { availablePlugins, pluginDefaults } = usePluginContext();
 
   const addList = () => {
-    const newId = plugins.length > 0 ? Math.max(...plugins.map(p => p.id)) + 1 : 0;
+    const newId =
+      plugins.length > 0 ? Math.max(...plugins.map((p) => p.id)) + 1 : 0;
     onPluginsChange([...plugins, { id: newId, type: "", content: "" }]);
   };
 

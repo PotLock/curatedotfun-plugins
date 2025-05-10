@@ -28,7 +28,9 @@ export default function PluginConfig() {
   const [view, setView] = useState<"json" | "config">("config");
   const [jsonConfig, setJsonConfig] = useState<string>("{}");
   const [currentContent, setCurrentContent] = useState<string>("");
-  const [originalContentSnapshot, setOriginalContentSnapshot] = useState<string | null>(null);
+  const [originalContentSnapshot, setOriginalContentSnapshot] = useState<
+    string | null
+  >(null);
   const [transformPlugins, setTransformPlugins] = useState<
     TransformPluginType[]
   >([]);
@@ -101,7 +103,7 @@ export default function PluginConfig() {
         toast.error("Cannot transform empty content");
         return;
       }
-      
+
       setOriginalContentSnapshot(currentContent); // Snapshot before transforming
 
       let contentToProcess = parseContent(currentContent);
@@ -117,9 +119,12 @@ export default function PluginConfig() {
             plugin: pluginConfig.type,
             config: JSON.parse(pluginConfig.content || "{}"),
           };
-          
+
           // transformContent expects an array of plugins, so wrap the current one
-          const result = await transformContent([apiPluginPayload], contentToProcess);
+          const result = await transformContent(
+            [apiPluginPayload],
+            contentToProcess,
+          );
           contentToProcess = result; // The result from API is already parsed (unknown type)
           lastSuccessfulContent = formatTransformedContent(result); // Update for next iteration's potential string input
           setCurrentContent(lastSuccessfulContent); // Update UI progressively
@@ -127,11 +132,15 @@ export default function PluginConfig() {
         } catch (pluginError) {
           toast.error(
             `Error applying plugin ${pluginConfig.type}: ${
-              pluginError instanceof Error ? pluginError.message : "Unknown error"
+              pluginError instanceof Error
+                ? pluginError.message
+                : "Unknown error"
             }. Stopping transformations.`,
           );
           // Revert to content before this failing plugin
-          setCurrentContent(formatTransformedContent(parseContent(lastSuccessfulContent)));
+          setCurrentContent(
+            formatTransformedContent(parseContent(lastSuccessfulContent)),
+          );
           throw pluginError; // Or handle more gracefully, e.g., allow continuing with next
         }
       }
@@ -140,10 +149,15 @@ export default function PluginConfig() {
     } catch (error: unknown) {
       // Catch errors from the loop or initial checks
       // Specific plugin errors are toasted inside the loop
-      if (!(error instanceof Error && error.message.includes("Error applying plugin"))) {
-         toast.error(
-           `Transform failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-         );
+      if (
+        !(
+          error instanceof Error &&
+          error.message.includes("Error applying plugin")
+        )
+      ) {
+        toast.error(
+          `Transform failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
       }
     }
   };
@@ -174,18 +188,25 @@ export default function PluginConfig() {
       });
 
       // Call the API to distribute the content
-      const results = await distributeContent(plugins, parsedContentForDistribution);
+      const results = await distributeContent(
+        plugins,
+        parsedContentForDistribution,
+      );
       const formattedResults = formatDistributionResults(results);
 
       if (results.length === 0) {
-        toast.success("Distribution attempt completed. No results from plugins.");
+        toast.success(
+          "Distribution attempt completed. No results from plugins.",
+        );
       } else {
-        const allSucceeded = results.every(r => r.success);
+        const allSucceeded = results.every((r) => r.success);
         if (allSucceeded) {
           toast.success(`All distributions successful:\n${formattedResults}`);
         } else {
           // Some or all individual plugin distributions failed
-          toast.error(`Distribution attempt had failures:\n${formattedResults}`);
+          toast.error(
+            `Distribution attempt had failures:\n${formattedResults}`,
+          );
         }
       }
     } catch (error: unknown) {
@@ -216,7 +237,9 @@ export default function PluginConfig() {
           />
           {originalContentSnapshot && (
             <div className="mt-4">
-              <h2 className="text-lg font-medium mb-2">Original Content (Snapshot):</h2>
+              <h2 className="text-lg font-medium mb-2">
+                Original Content (Snapshot):
+              </h2>
               <div className="p-4 border rounded-md bg-gray-100 dark:bg-gray-800 whitespace-pre-wrap text-sm">
                 {originalContentSnapshot}
               </div>
