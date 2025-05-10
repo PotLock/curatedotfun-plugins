@@ -38,7 +38,8 @@ interface CrosspostConfig {
 }
 
 export default class CrosspostPlugin
-  implements DistributorPlugin<unknown, CrosspostConfig> {
+  implements DistributorPlugin<unknown, CrosspostConfig>
+{
   readonly type = "distributor" as const;
   private config: CrosspostConfig | null = null;
   private client: CrosspostClient | null = null;
@@ -48,14 +49,14 @@ export default class CrosspostPlugin
     CrosspostMethod,
     keyof CrosspostClient["post"]
   > = {
-      create: "createPost",
-      reply: "replyToPost",
-      delete: "deletePost",
-      like: "likePost",
-      unlike: "unlikePost",
-      repost: "repost",
-      quote: "quotePost",
-    };
+    create: "createPost",
+    reply: "replyToPost",
+    delete: "deletePost",
+    like: "likePost",
+    unlike: "unlikePost",
+    repost: "repost",
+    quote: "quotePost",
+  };
 
   async initialize(config?: CrosspostConfig): Promise<void> {
     if (!config) {
@@ -74,9 +75,17 @@ export default class CrosspostPlugin
       throw new Error("Crosspost plugin requires 'method' in configuration.");
     }
 
-    const allowedMethods: CrosspostMethod[] = ['create', 'reply', 'delete', 'like', 'unlike', 'repost', 'quote'];
+    const allowedMethods: CrosspostMethod[] = [
+      "create",
+      "reply",
+      "delete",
+      "like",
+      "unlike",
+      "repost",
+      "quote",
+    ];
     if (!allowedMethods.includes(config.method)) {
-      throw new Error(`Method must be one of: ${allowedMethods.join(', ')}`);
+      throw new Error(`Method must be one of: ${allowedMethods.join(", ")}`);
     }
 
     this.client = new CrosspostClient();
@@ -106,13 +115,14 @@ export default class CrosspostPlugin
     console.log("got input: ", input);
 
     const currentMethod = this.config.method;
-    let validatedInput: z.infer<typeof CreatePostRequestSchema> |
-      z.infer<typeof ReplyToPostRequestSchema> |
-      z.infer<typeof DeletePostRequestSchema> |
-      z.infer<typeof LikePostRequestSchema> |
-      z.infer<typeof UnlikePostRequestSchema> |
-      z.infer<typeof RepostRequestSchema> |
-      z.infer<typeof QuotePostRequestSchema>;
+    let validatedInput:
+      | z.infer<typeof CreatePostRequestSchema>
+      | z.infer<typeof ReplyToPostRequestSchema>
+      | z.infer<typeof DeletePostRequestSchema>
+      | z.infer<typeof LikePostRequestSchema>
+      | z.infer<typeof UnlikePostRequestSchema>
+      | z.infer<typeof RepostRequestSchema>
+      | z.infer<typeof QuotePostRequestSchema>;
 
     try {
       switch (currentMethod) {
