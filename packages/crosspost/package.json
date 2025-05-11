@@ -48,6 +48,7 @@
   "dependencies": {
     "@crosspost/sdk": "^0.2.6",
     "@crosspost/types": "^0.2.6",
+    "@module-federation/node": "^2.7.2",
     "@near-js/client": "^0.0.4",
     "@near-js/crypto": "^1.4.2",
     "@noble/hashes": "^1.8.0",
