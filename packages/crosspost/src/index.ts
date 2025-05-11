@@ -20,7 +20,6 @@ import {
 } from "near-sign-verify";
 import { z } from "zod";
 
-// Define the allowed methods for the CrosspostPlugin
 export type CrosspostMethod =
   | "create"
   | "reply"

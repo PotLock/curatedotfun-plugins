@@ -1,4 +1,4 @@
-# NEAR Social Plugin for Curated.fun
+# NEAR Social Plugin for curate.fun
 
 A distribution plugin for posting content to NEAR Social.
 
@@ -25,7 +25,7 @@ await nearSocialPlugin.initialize({
 
 // Distribute content to NEAR Social
 await nearSocialPlugin.distribute({
-  input: "Hello, NEAR Social! This is a post from Curated.fun."
+  input: "Hello, NEAR Social! This is a post from curate.fun."
 });
 ```
 
