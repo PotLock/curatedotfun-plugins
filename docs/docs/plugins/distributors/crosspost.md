@@ -228,7 +228,7 @@ Each method requires specific input data that conforms to the corresponding sche
 - The Crosspost plugin requires a private key to sign transactions. This key should be a function call access key.
 - Consider using a dedicated NEAR account for distribution purposes rather than your main account.
 - Monitor your account's activity regularly to ensure it's being used as expected.
-- Set appropriate gas limits for your transactions to control costs.
+- Set 0 allowance to ensure the FCAK has no monetary access.
 
 ## 🔗 Related Resources
 
