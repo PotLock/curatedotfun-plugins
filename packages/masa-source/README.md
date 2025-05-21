@@ -13,8 +13,8 @@ To use the Masa Source plugin, you need to configure it within your `curate.conf
     {
       "plugins": {
         "@curatedotfun/masa-source": {
-          "type": "source"
-          // "url": "https://unpkg.com/@curatedotfun/masa-source@latest/dist/remoteEntry.js" // If loaded via Module Federation
+          "type": "source",
+          "url": "https://unpkg.com/@curatedotfun/masa-source@latest/dist/remoteEntry.js" // If loaded via Module Federation
         }
       }
     }
