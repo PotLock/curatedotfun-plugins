@@ -44,6 +44,11 @@ let pluginRegistry: Record<string, PluginMetadata> = {
     url: "http://localhost:3010/remoteEntry.js",
     type: "distributor",
   },
+  "@curatedotfun/masa-source": {
+    // Added masa-source plugin
+    url: "http://localhost:3011/remoteEntry.js", // Assuming port 3011, adjust if necessary
+    type: "source",
+  },
 };
 
 export function getPluginByName(name: string): PluginMetadata | undefined {
@@ -64,7 +69,8 @@ export function setPluginRegistry(
         `Invalid plugin metadata for ${name}: missing url or type`,
       );
     }
-    if (!["distributor", "transformer"].includes(metadata.type)) {
+    // Updated to include "source" as a valid type
+    if (!["distributor", "transformer", "source"].includes(metadata.type)) {
       throw new Error(`Invalid plugin type for ${name}: ${metadata.type}`);
     }
   }

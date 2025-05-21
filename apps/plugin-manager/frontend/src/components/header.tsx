@@ -76,6 +76,9 @@ export default function Header() {
         <Button onClick={() => history.push("/plugin-registry")}>
           Plugin Registry
         </Button>
+        <Button onClick={() => history.push("/source-query")}>
+          Source Query
+        </Button>
       </div>
     </div>
   );
