@@ -6,15 +6,15 @@ The Masa Source plugin enables content ingestion from various social and web pla
 
 To use the Masa Source plugin, you need to configure it within your `curate.config.json` file.
 
-1.  **Plugin Registration (if not globally registered):**
-    Ensure the Masa Source plugin is declared in your `curate.config.json` if it's intended to be loaded dynamically.
+1.  **Plugin Registration:**
+    Ensure the Masa Source plugin is declared in your `curate.config.json` so it can be loaded dynamically.
 
-    ```json
+    ```jsonc
     {
       "plugins": {
         "@curatedotfun/masa-source": {
           "type": "source",
-          "url": "https://unpkg.com/@curatedotfun/masa-source@latest/dist/remoteEntry.js" // If loaded via Module Federation
+          "url": "https://unpkg.com/@curatedotfun/masa-source@latest/dist/remoteEntry.js" // Loaded via Module Federation
         }
       }
     }
@@ -23,7 +23,7 @@ To use the Masa Source plugin, you need to configure it within your `curate.conf
 2.  **Source Configuration:**
     Add the Masa Source plugin to a feed's `sources` array in your `curate.config.json`.
 
-    ```json
+    ```jsonc
     {
       "feeds": [
         {
@@ -32,11 +32,11 @@ To use the Masa Source plugin, you need to configure it within your `curate.conf
             {
               "plugin": "@curatedotfun/masa-source",
               "config": {
-                "apiKey": "{MASA_API_KEY}"
-                // "baseUrl": "https://data.masalabs.ai/api/v1" 
+                "apiKey": "{MASA_API_KEY}" // hydrated during runtime
+                // "baseUrl": "https://data.masalabs.ai/api/v1" // default
               },
               "search": [
-                // Define one or more search configurations here
+                // Define one or more search configurations here, following Platform
               ]
             }
           ]
@@ -51,19 +51,19 @@ To use the Masa Source plugin, you need to configure it within your `curate.conf
 
 ### Configuration Options
 
-#### Plugin-Level Configuration (`config` block):
+#### Plugin-Level Configuration (`config` block)
 
 -   `apiKey` (required, string): Your API key for accessing the Masa API.
 -   `baseUrl` (optional, string): The base URL for the Masa API. Defaults to the official production URL if not specified.
 
-#### Search-Level Configuration (within the `search` array):
+#### Search-Level Configuration (within the `search` array)
 
 Each object in the `search` array defines a specific query to be executed by the plugin.
 
 -   `type` (required, string): Specifies the platform or data type to search on Masa (e.g., `"twitter-scraper"`). This corresponds to a registered service within the Masa Source plugin.
 -   `query` (optional, string): A general query string. Its interpretation depends on the specific service (`type`). For some services, this might map to a primary search term (e.g., `allWords` for Twitter).
 -   `pageSize` (optional, number): A general hint for how many items to fetch per request. The service might override or interpret this.
--   `language` (optional, string): A language code (e.g., "en", "es") to filter results by language, if supported by the service.
+-   `language` (optional, string): A language code (e.g., "en", "es") to filter results by language if supported by the service.
 -   `platformArgs` (required, object): An object containing options specific to the service defined by `type`. The structure of `platformArgs` varies per service.
 
 ### Supported Services
@@ -76,13 +76,15 @@ This service fetches tweets from Twitter via Masa.
 
 **Example `platformArgs` for Twitter:**
 
-```json
+```jsonc
 {
   "platformArgs": {
     "allWords": "web3 community", // Search for tweets containing all these words
     "hashtags": ["#NEARProtocol", "#opensource"], // Filter by hashtags
     "fromAccounts": ["neardevgov", "pagodaplatform"], // Tweets from these accounts
-    // "sinceId": "1234567890", // Fetch tweets newer than this ID (for pagination)
+    "mentioningAccounts": ["curatedotfun", "potlock_"], // Tweets mentioning these accounts
+    "sinceDate": "2023-01-31", // Fetch tweets since this date (YYYY-MM-DD)
+    "sinceId": "1234567890123456789", // Fetch tweets newer than this Tweet ID
     "minLikes": 10,
     "pageSize": 25 // Specific to the service's handling of page size
   }
@@ -91,7 +93,7 @@ This service fetches tweets from Twitter via Masa.
 
 **Full Example Configuration for Twitter Search:**
 
-```json
+```jsonc
 {
   "feeds": [
     {
@@ -106,14 +108,16 @@ This service fetches tweets from Twitter via Masa.
             {
               "type": "twitter-scraper",
               "query": "decentralized social media", // General query, is 'allWords'
-              "pageSize": 50, // Number of items to return
+              "pageSize": 50, // A general hint for how many items to fetch per request. The service might override or interpret this. 
               "language": "en",
               "platformArgs": {
                 // More specific Twitter options:
                 "anyWords": "blockchain crypto", // Tweets with any of these words
                 "hashtags": ["#DeSo", "#SocialFi"],
                 "minRetweets": 5,
-                "includeReplies": false
+                "includeReplies": false,
+                "sinceDate": "YYYY-MM-DD", // Example: Fetch tweets since this date
+                "mentioningAccounts": ["some_project"] // Example: Tweets mentioning a specific account
               }
             },
             {
@@ -139,10 +143,10 @@ The Masa Source plugin supports resumable search by managing state between calls
 -   **`latestProcessedId`**: For services that return items in a sequence (like tweets by ID), this tracks the ID of the most recent item successfully processed. This is crucial for ensuring that subsequent jobs request data *after* this ID, preventing duplicate processing and allowing searches to resume.
 
 -   **`currentMasaJob`**: For services involving asynchronous jobs on the Masa network (like the Twitter scraper), the `currentMasaJob` object within the `data` field of `LastProcessedState` tracks the job's progress.
-    *   When the plugin's `search` method is called with a `lastProcessedState` indicating an active job, the plugin checks the job's current status with Masa.
-    *   If the job has completed successfully ('done'), the plugin retrieves the results.
-    *   If the job is still pending, the plugin returns no new items but provides an updated `nextLastProcessedState` with the latest job status.
-    *   The consuming system re-calls `search` with the `nextLastProcessedState` until the job is 'done' or an 'error' occurs.
+    -   When the plugin's `search` method is called with a `lastProcessedState` indicating an active job, the plugin checks the job's current status with Masa.
+    -   If the job has completed successfully ('done'), the plugin retrieves the results.
+    -   If the job is still pending, the plugin returns no new items but provides an updated `nextLastProcessedState` with the latest job status.
+    -   The consuming system re-calls `search` with the `nextLastProcessedState` until the job is 'done' or an 'error' occurs.
 
 #### Example: Consumer Handling of Asynchronous Masa Jobs
 

@@ -1,7 +1,19 @@
 export type PluginType = "transformer" | "distributor" | "source";
 
-// Zod import for schema definition
-import { z } from "zod";
+// --- General Plugin Configuration Types ---
+
+/**
+ * Configuration for registering a plugin in the application.
+ * TConfig is the static configuration for the plugin instance.
+ */
+export interface PluginRegistrationConfig<
+  PType extends PluginType = PluginType,
+  TConfig = Record<string, unknown>,
+> {
+  type: PType;
+  url: string; // URL for Module Federation or path for local loading
+  config?: TConfig; // Static configuration for this plugin instance
+}
 
 // Base plugin interface
 export interface BotPlugin<
@@ -55,7 +67,7 @@ export type PluginTypeMap<
   TInput = unknown,
   TOutput = unknown,
   TConfig extends Record<string, unknown> = Record<string, unknown>,
-  TItem = any,
+  TItem extends SourceItem = SourceItem,
 > = {
   transformer: TransformerPlugin<TInput, TOutput, TConfig>;
   distributor: DistributorPlugin<TInput, TConfig>;
@@ -63,39 +75,59 @@ export type PluginTypeMap<
 };
 
 // Source Plugin Types
+
+/**
+ * State passed between search calls to enable resumption.
+ * TData is expected to be an object conforming to PlatformState or a derivative.
+ */
 export interface LastProcessedState<
-  TData extends Record<string, any> = Record<string, any>,
+  TData extends PlatformState = PlatformState,
 > {
-  id?: string | null; // Retain for now, though platform-specific state might handle this better
-  timestamp?: number | null; // Retain for now
-  // The `data` field now holds the platform-specific state, strongly typed.
-  // This will typically be an object conforming to PlatformState or a derivative.
+  // The `data` field holds the strongly-typed, platform-specific state.
   data: TData;
-  // Removed [key: string]: any; from the top level to encourage use of the typed `data` field.
+  // Optional: A unique identifier for this state object itself, if needed for storage/retrieval.
+  // id?: string;
+  // Optional: Timestamp of when this state was generated.
+  // timestamp?: number;
 }
 
+/**
+ * Configuration options for a specific search operation by a SourcePlugin.
+ * TPlatformOpts allows for platform-specific arguments.
+ */
 export interface SourcePluginSearchOptions<
   TPlatformOpts = Record<string, any>,
 > {
   type: string; // e.g., "twitter-scraper", "reddit-scraper". The plugin will interpret this.
-  query: string; // Base query string, can also be part of TPlatformOpts if a platform doesn't use a generic query string
-  pageSize?: number;
+  query?: string; // General query string. Its interpretation depends on the plugin and the 'type'.
+  pageSize?: number; // General hint for how many items to fetch per request. The plugin/service might override or interpret this.
   platformArgs?: TPlatformOpts; // Typed platform-specific arguments
-  // Retaining [key: string]: any for flexibility with less strictly typed platforms or additional dynamic args,
-  // but platformArgs should be the primary way to pass structured options.
+
+  // Allows for additional dynamic arguments if needed.
   [key: string]: any;
 }
 
+/**
+ * Results of a search operation from a SourcePlugin.
+ * TItem is the type of items (e.g., SourceItem or MasaSearchResult).
+ * TPlatformState is the platform-specific state for resumption.
+ */
 export interface SourcePluginSearchResults<
-  TItem = any,
+  TItem extends SourceItem = SourceItem,
   TPlatformState extends PlatformState = PlatformState,
 > {
   items: TItem[];
   nextLastProcessedState: LastProcessedState<TPlatformState> | null;
 }
 
+/**
+ * Interface for a source plugin.
+ * TItem is the type of items the plugin produces (should extend SourceItem).
+ * TConfig is the plugin's instance-level configuration.
+ * TPlatformState is the platform-specific state used for resumable searches.
+ */
 export interface SourcePlugin<
-  TItem = any, // The type of items the source plugin will produce
+  TItem extends SourceItem = SourceItem,
   TConfig extends Record<string, unknown> = Record<string, unknown>, // Configuration for the plugin instance
   TPlatformState extends PlatformState = PlatformState, // Generic for the platform-specific part of LastProcessedState
 > extends BotPlugin<TConfig> {
@@ -120,8 +152,10 @@ export interface SourcePlugin<
   ): Promise<SourcePluginSearchResults<TItem, TPlatformState>>;
 }
 
-// Defines the progress of a job submitted to an external service like Masa
-export interface MasaJobProgress {
+/**
+ * Defines the progress of a job submitted to an external asynchronous service (e.g., Masa).
+ */
+export interface AsyncJobProgress {
   jobId: string;
   status: "submitted" | "pending" | "processing" | "done" | "error" | "timeout";
   submittedAt: string; // ISO timestamp
@@ -131,8 +165,10 @@ export interface MasaJobProgress {
   // queryDetails?: Record<string, any>;
 }
 
-// Generic platform state for services that manage long-running jobs
-// and resumable searches.
+/**
+ * Generic platform-specific state for managing resumable searches and long-running jobs.
+ * This is the `TData` type for `LastProcessedState`.
+ */
 export interface PlatformState {
   // For overall resumable search (across multiple jobs/chunks)
   // This cursor can be a string, number, or a more complex object
@@ -140,7 +176,7 @@ export interface PlatformState {
   latestProcessedId?: string | number | Record<string, any>;
 
   // For the currently active job (e.g., a Masa search job for one chunk)
-  currentMasaJob?: MasaJobProgress | null;
+  currentAsyncJob?: AsyncJobProgress | null;
 
   // Allows for other platform-specific state variables
   [key: string]: any;
@@ -148,7 +184,7 @@ export interface PlatformState {
 
 // Standard Service Interface for platform-specific search services
 export interface IPlatformSearchService<
-  TItem = any,
+  TItem extends SourceItem,
   TPlatformOptions = Record<string, unknown>,
   // TPlatformState now extends the new generic PlatformState
   TPlatformState extends PlatformState = PlatformState,
@@ -160,4 +196,33 @@ export interface IPlatformSearchService<
     currentState: LastProcessedState<TPlatformState> | null,
   ): Promise<{ items: TItem[]; nextStateData: TPlatformState | null }>;
   shutdown?(): Promise<void>; // Added for service cleanup
+}
+
+/**
+ * The structure of an individual item returned by a source plugin.
+ * This is the `TItem` in `SourcePluginSearchResults`.
+ */
+export interface SourceItem {
+  id: string; // Unique identifier for the item from the source plugin/platform (e.g., Masa's ID)
+  externalId: string; // Platform-specific external identifier (e.g., Tweet ID, Reddit post ID)
+  content: string; // Main text content of the item
+  createdAt?: string; // ISO 8601 timestamp of item creation on the original platform
+  author?: {
+    id?: string; // Author's platform-specific user ID
+    username?: string; // Author's username or handle
+    displayName?: string; // Author's display name
+    [key: string]: any; // Other author-specific details
+  };
+  metadata?: {
+    sourcePlugin: string; // Name of the plugin that sourced this item
+    searchType: string; // The 'type' from SourcePluginSearchOptions used
+    url?: string; // URL to the original item
+    language?: string; // Language code
+    isReply?: boolean;
+    inReplyToId?: string; // External ID of the item this is a reply to
+    conversationId?: string;
+    [key: string]: any; // Other platform-specific or plugin-specific metadata
+  };
+  raw?: any; // Optional: The original raw data from the source, for debugging or advanced processing
+  [key: string]: any; // Other top-level fields from the source
 }

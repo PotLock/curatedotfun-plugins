@@ -1,4 +1,6 @@
-export interface MasaSearchResult {
+import type { SourceItem } from "@curatedotfun/types";
+
+export interface MasaSearchResult extends SourceItem {
   ID: string;
   ExternalID: string;
   Content: string;
