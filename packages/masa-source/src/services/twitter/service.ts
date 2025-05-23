@@ -1,27 +1,19 @@
 import {
   IPlatformSearchService,
   LastProcessedState,
-  MasaJobProgress,
-  // PlatformState, // Not used directly here, TwitterPlatformState extends it
+  AsyncJobProgress,
 } from "@curatedotfun/types";
-// Removed import of UtilTweet from @curatedotfun/utils as it's not exported there.
-// ServiceTweet is already an alias for MasaSearchResult.
+
 import {
   MasaApiSearchOptions,
   MasaClient,
   MasaSearchResult,
 } from "../../masa-client";
-import {
-  TwitterQueryOptionsOutput,
-  TwitterPlatformState, // This now extends PlatformState
-} from "./types";
+import { TwitterQueryOptionsOutput, TwitterPlatformState } from "./types";
 import { buildTwitterQuery } from "./utils/twitterQueryBuilder";
 
-// For now, the service will work with MasaSearchResult and transform it.
-// If UtilTweet is different, the transformation logic will need to be robust.
-export type ServiceTweet = MasaSearchResult; // Internally, service deals with what MasaClient returns
+export type ServiceTweet = MasaSearchResult;
 
-// const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes - Cache logic to be re-added later
 const DEFAULT_PAGE_SIZE = 25;
 
 export class TwitterSearchService
@@ -33,17 +25,9 @@ export class TwitterSearchService
     >
 {
   private masaClient: MasaClient;
-  // private searchCache: Map<string, any>; // Cache logic to be re-added later
-  // private cacheTtl: number;
-  // private processedTweetIdsThisSession: Set<string>; // To be re-evaluated
 
-  constructor(
-    masaClient: MasaClient /*, cacheTtlMs: number = DEFAULT_CACHE_TTL_MS */,
-  ) {
+  constructor(masaClient: MasaClient) {
     this.masaClient = masaClient;
-    // this.searchCache = new Map();
-    // this.cacheTtl = cacheTtlMs;
-    // this.processedTweetIdsThisSession = new Set();
   }
 
   async initialize(): Promise<void> {
@@ -68,33 +52,33 @@ export class TwitterSearchService
       );
     }
 
-    const currentJob = currentState?.data?.currentMasaJob;
+    const currentAsyncJob = currentState?.data?.currentAsyncJob;
     const latestProcessedId = currentState?.data?.latestProcessedId as
       | string
       | undefined;
 
-    // 1. Handle existing job
+    // Process state data (async jobs)
     if (
-      currentJob &&
-      currentJob.status !== "done" &&
-      currentJob.status !== "error" &&
-      currentJob.status !== "timeout"
+      currentAsyncJob &&
+      currentAsyncJob.status !== "done" &&
+      currentAsyncJob.status !== "error" &&
+      currentAsyncJob.status !== "timeout"
     ) {
       console.log(
-        `TwitterSearchService: Checking status for existing job ${currentJob.jobId}`,
+        `TwitterSearchService: Checking status for existing job ${currentAsyncJob.jobId}`,
       );
       const jobStatus = await this.masaClient.checkJobStatus(
         "twitter-scraper",
-        currentJob.jobId,
+        currentAsyncJob.jobId,
       );
 
       if (jobStatus === "done") {
         console.log(
-          `TwitterSearchService: Job ${currentJob.jobId} is done. Fetching results.`,
+          `TwitterSearchService: Job ${currentAsyncJob.jobId} is done. Fetching results.`,
         );
         const results = await this.masaClient.getJobResults(
           "twitter-scraper",
-          currentJob.jobId,
+          currentAsyncJob.jobId,
         );
         const items = results || [];
 
@@ -114,8 +98,8 @@ export class TwitterSearchService
         const nextStateData: TwitterPlatformState = {
           ...currentState?.data, // Preserve other potential state fields
           latestProcessedId: newLatestProcessedId,
-          currentMasaJob: {
-            ...currentJob,
+          currentAsyncJob: {
+            ...currentAsyncJob,
             status: "done",
             lastCheckedAt: new Date().toISOString(),
           },
@@ -131,12 +115,12 @@ export class TwitterSearchService
         jobStatus === null
       ) {
         console.error(
-          `TwitterSearchService: Job ${currentJob.jobId} failed or status check error.`,
+          `TwitterSearchService: Job ${currentAsyncJob.jobId} failed or status check error.`,
         );
         const nextStateData: TwitterPlatformState = {
           ...currentState?.data,
-          currentMasaJob: {
-            ...currentJob,
+          currentAsyncJob: {
+            ...currentAsyncJob,
             status: "error",
             errorMessage: `Job status: ${jobStatus}`,
             lastCheckedAt: new Date().toISOString(),
@@ -146,13 +130,13 @@ export class TwitterSearchService
       } else {
         // Still pending or processing
         console.log(
-          `TwitterSearchService: Job ${currentJob.jobId} status: ${jobStatus}.`,
+          `TwitterSearchService: Job ${currentAsyncJob.jobId} status: ${jobStatus}.`,
         );
         const nextStateData: TwitterPlatformState = {
           ...currentState?.data,
-          currentMasaJob: {
-            ...currentJob,
-            status: jobStatus as MasaJobProgress["status"],
+          currentAsyncJob: {
+            ...currentAsyncJob,
+            status: jobStatus as AsyncJobProgress["status"],
             lastCheckedAt: new Date().toISOString(),
           },
         };
@@ -160,7 +144,7 @@ export class TwitterSearchService
       }
     }
 
-    // 2. No active job, or previous job finished/errored - Submit a new job
+    // No active jobs, or previous job finished/errored - Submit a new job
     console.log(
       "TwitterSearchService: No active job or previous job completed/errored. Submitting new job.",
     );
@@ -185,7 +169,7 @@ export class TwitterSearchService
       console.log(
         `TwitterSearchService: New job submitted with ID: ${newJobId}`,
       );
-      const newMasaJob: MasaJobProgress = {
+      const newAsyncJob: AsyncJobProgress = {
         jobId: newJobId,
         status: "submitted",
         submittedAt: new Date().toISOString(),
@@ -193,13 +177,13 @@ export class TwitterSearchService
       const nextStateData: TwitterPlatformState = {
         ...currentState?.data, // Preserve other state fields like latestProcessedId from previous successful chunk
         latestProcessedId: latestProcessedId, // Carry over the ID that bounded this search
-        currentMasaJob: newMasaJob,
+        currentAsyncJob: newAsyncJob,
       };
       return { items: [], nextStateData };
     } else {
       console.error("TwitterSearchService: Failed to submit new search job.");
       // Create a job progress state reflecting the submission error
-      const errorMasaJob: MasaJobProgress = {
+      const errorAsyncJob: AsyncJobProgress = {
         jobId: "submission_failed_" + Date.now(), // Placeholder ID
         status: "error",
         submittedAt: new Date().toISOString(),
@@ -208,7 +192,7 @@ export class TwitterSearchService
       const nextStateData: TwitterPlatformState = {
         ...currentState?.data,
         latestProcessedId: latestProcessedId,
-        currentMasaJob: errorMasaJob,
+        currentAsyncJob: errorAsyncJob,
       };
       return { items: [], nextStateData };
     }
@@ -216,21 +200,5 @@ export class TwitterSearchService
 
   async shutdown(): Promise<void> {
     console.log("TwitterSearchService shutdown.");
-    // Clear cache or other cleanup if necessary
-    // this.searchCache.clear();
   }
-
-  // Helper to transform MasaSearchResult to the desired Tweet format if needed.
-  // For now, ServiceTweet is MasaSearchResult, so no transformation.
-  // private transformToTweet(result: MasaSearchResult): UtilTweet {
-  //   return {
-  //     id: result.ExternalID || result.ID,
-  //     text: result.Content,
-  //     author_id: result.Metadata?.user_id,
-  //     created_at: result.Metadata?.created_at,
-  //     conversation_id: result.Metadata?.conversation_id,
-  //     // Add other mappings
-  //     __source: 'twitter_masa_service',
-  //   };
-  // }
 }
