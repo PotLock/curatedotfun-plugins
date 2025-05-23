@@ -1,0 +1,55 @@
+{
+  "name": "@curatedotfun/masa-source",
+  "version": "0.0.1",
+  "description": "Masa source plugin for curatedotfun",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/potlock/curatedotfun-plugins.git",
+    "directory": "packages/masa-source"
+  },
+  "keywords": [
+    "curatedotfun",
+    "masa",
+    "source",
+    "plugin"
+  ],
+  "scripts": {
+    "build": "rspack build && tsc -p tsconfig.build.json",
+    "dev": "rspack serve",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@curatedotfun/types": "workspace:*",
+    "@curatedotfun/utils": "workspace:*",
+    "@rspack/cli": "latest",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "msw": "^2.3.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.6.0"
+  }
+}

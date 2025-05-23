@@ -323,6 +323,37 @@ export class PluginService {
   }
 
   /**
+   * Reloads all plugin modules by re-initializing Module Federation.
+   * This will cause all subsequent plugin requests to fetch the latest code.
+   */
+  public async reloadAllPlugins(): Promise<void> {
+    try {
+      console.info("Attempting to reload all plugins...");
+      // Clear existing instances and remotes to force re-fetch and re-init
+      this.instances.clear();
+      this.remotes.clear(); // Clearing remotes ensures they are re-fetched with new URLs if changed in config
+
+      // Perform the reload operation for module federation
+      // The true flag indicates a full reload, clearing caches.
+      await performReload(true);
+
+      // Re-initialize the host application's federation capabilities.
+      // This step is crucial after a reload to ensure the runtime is aware of the (potentially new) remotes.
+      // An empty remotes array might be passed if dynamic remote loading is handled elsewhere or if remotes are re-added.
+      // For simplicity, we re-initialize with an empty set, assuming remotes are added on demand or via config.
+      init({
+        name: "host",
+        remotes: [], // Or re-fetch and pass current remote configurations
+      });
+      console.info("All plugins reloaded successfully.");
+    } catch (error) {
+      console.error("Failed to reload plugins:", error);
+      // Wrap the error in a PluginError for consistent error handling
+      throw new PluginError("Failed to reload plugins", error as Error);
+    }
+  }
+
+  /**
    * Loads a plugin module
    */
   private async loadModule(remote: RemoteState): Promise<void> {
@@ -417,6 +448,8 @@ export class PluginService {
     switch (type) {
       case "distributor":
         return typeof instance.distribute === "function";
+      case "source": // Added source plugin validation
+        return typeof instance.search === "function";
       case "transformer":
         return typeof instance.transform === "function";
       default:

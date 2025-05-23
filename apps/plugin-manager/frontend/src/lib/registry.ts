@@ -72,3 +72,15 @@ export function getAvailablePluginsByType(registry: PluginRegistry): {
 
   return result;
 }
+
+/**
+ * Request the backend to reload all plugins
+ */
+export async function reloadPlugins(): Promise<void> {
+  try {
+    await post<void>("/plugins/reload", {});
+  } catch (error) {
+    console.error("Failed to request plugin reload:", error);
+    throw error;
+  }
+}

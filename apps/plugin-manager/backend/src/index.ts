@@ -1,6 +1,12 @@
-import { DistributorPlugin } from "@curatedotfun/types";
+import {
+  DistributorPlugin,
+  LastProcessedState,
+  PlatformState,
+  SourcePluginSearchOptions,
+} from "@curatedotfun/types";
 import "dotenv/config";
 import express from "express";
+import { merge } from "lodash";
 import path from "path";
 import { PluginService } from "./plugin-service";
 import {
@@ -9,7 +15,6 @@ import {
   setPluginRegistry,
 } from "./plugin-service/plugin-registry";
 import { hydrateConfigValues } from "./utils";
-import { merge } from "lodash";
 
 async function main() {
   const app = express();
@@ -195,6 +200,69 @@ async function main() {
     }
   });
 
+  // Source Query endpoint
+  app.post("/api/source/query", async (req, res) => {
+    try {
+      const {
+        pluginName,
+        options,
+        config: pluginInitConfig,
+        lastProcessedState,
+      } = req.body as {
+        pluginName: string;
+        options: SourcePluginSearchOptions;
+        config: Record<string, any>;
+        lastProcessedState?: LastProcessedState<PlatformState>;
+      };
+
+      if (!pluginName) {
+        throw new Error("Missing pluginName in request body");
+      }
+      if (!options) {
+        throw new Error("Missing options in request body");
+      }
+      if (!options.type || !options.query) {
+        throw new Error("Invalid options: type and query are required");
+      }
+
+      // Hydrate plugin initialization config with environment variables
+      const hydratedConfig = hydrateConfigValues(pluginInitConfig || {});
+
+      // Load and configure source plugin
+      const plugin = await pluginService.getPlugin<
+        "source",
+        SourcePluginSearchOptions,
+        any,
+        Record<string, any>
+      >(pluginName, {
+        type: "source",
+        config: hydratedConfig,
+      });
+
+      console.log(
+        `Querying source plugin: ${pluginName} with options:`,
+        options,
+        "and lastProcessedState:",
+        lastProcessedState,
+      );
+      // Pass lastProcessedState to the search method
+      const searchResult = await plugin.search(
+        lastProcessedState || null,
+        options,
+      );
+
+      res.json({ success: true, output: searchResult });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Source query failed";
+      console.error("Error in source query:", error);
+      res.status(500).json({
+        success: false,
+        error: errorMessage,
+      });
+    }
+  });
+
   // Plugin registry endpoints
   app.get("/api/plugin-registry", (req, res) => {
     try {
@@ -228,6 +296,22 @@ async function main() {
           ? error.message
           : "Failed to update plugin registry";
       console.error("Error updating plugin registry:", error);
+      res.status(500).json({
+        success: false,
+        error: errorMessage,
+      });
+    }
+  });
+
+  // Plugin reload endpoint
+  app.post("/api/plugins/reload", async (req, res) => {
+    try {
+      await pluginService.reloadAllPlugins();
+      res.json({ success: true, message: "Plugins reloaded successfully." });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reload plugins";
+      console.error("Error reloading plugins:", error);
       res.status(500).json({
         success: false,
         error: errorMessage,
