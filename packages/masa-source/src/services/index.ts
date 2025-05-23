@@ -1,6 +1,7 @@
 import {
   IPlatformSearchService,
   PlatformState,
+  SourceItem,
   SourcePluginSearchOptions,
 } from "@curatedotfun/types";
 import { z } from "zod";
@@ -24,7 +25,7 @@ export interface PlatformConfig<
 
 // Interface for entries in the service registry
 export interface ServiceRegistryEntry<
-  TItem = any,
+  TItem extends SourceItem,
   TPlatformOptionsInput extends Record<string, any> = Record<string, any>,
   TPlatformOptionsOutput extends Record<string, any> = Record<string, any>,
   TPlatformState extends PlatformState = PlatformState,
