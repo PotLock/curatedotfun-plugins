@@ -54,6 +54,7 @@ Transforms can be configured in three locations in your `curate.config.json`:
 - [Simple Transform](./simple-transform.md) - String-based formatting using templates
 - [Object Transform](./object-transform.md) - Object-to-object mapping using templates
 - [AI Transform](./ai-transform.md) - Content enhancement using AI
+- [Translate Transform](./translate-transform.md) - Translate transform using AI
 
 ## 🔒 Type Safety
 

@@ -1,4 +1,4 @@
-import type { DeepL, SourceLanguageCode, TargetLanguageCode, TranslateTextOptions } from './types';
+import type { SourceLanguageCode, TargetLanguageCode, TranslateTextOptions } from './types';
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 import { Translator } from 'deepl-node';
 
@@ -30,7 +30,7 @@ export default class TranslationTransformer
 
     async transform({
         input,
-    }: ActionArgs<unknown, TranslationConfig>): Promise<{ content: string }> {
+    }: ActionArgs<{ content: string }, TranslationConfig>): Promise<{ content: string }> {
         try {
             if (!this.translator || !this.config) {
                 throw new Error("Translator not initialized. Call initialize() first.");
@@ -40,12 +40,20 @@ export default class TranslationTransformer
             if (input === undefined || input === null) {
                 throw new Error("Input cannot be undefined or null");
             }
-            // Convert input to string if it's not already
-            const textToTranslate = (input as { content: string }).content;
+            if (typeof input !== 'object' || !('content' in input)) {
+                throw new Error("Input must be an object with a 'content' property");
+            }
+
+            const inputObj = input as { content: unknown };
+            if (typeof inputObj.content !== 'string') {
+                throw new Error("Input content must be a string");
+            }
+
+            const textToTranslate = inputObj.content;
             // Perform translation
             const result = await this.translator.translateText(
                 textToTranslate,
-                null,
+                this.config.sourceLang || null,
                 this.config.targetLang,
                 {
                     preserveFormatting: this.config.preserveFormatting ?? true,

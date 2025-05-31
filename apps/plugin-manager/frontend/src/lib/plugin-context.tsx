@@ -49,8 +49,8 @@ export const PLUGIN_DEFAULTS: Record<string, Record<string, unknown>> = {
   },
   "@curatedotfun/translate-transform": {
     apiKey: "{DEEPL_API_KEY}",
-    targetLang: "EN-US",
-    sourceLang: "auto",
+    targetLang: "JA",
+    sourceLang: "EN",
     preserveFormatting: true
   },
   "@curatedotfun/notion": {
