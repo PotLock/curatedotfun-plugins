@@ -51,7 +51,7 @@ export const PLUGIN_DEFAULTS: Record<string, Record<string, unknown>> = {
     apiKey: "{DEEPL_API_KEY}",
     targetLang: "JA",
     sourceLang: "EN",
-    preserveFormatting: true
+    preserveFormatting: true,
   },
   "@curatedotfun/notion": {
     token: "{NOTION_TOKEN}",
@@ -91,7 +91,7 @@ const PluginContext = createContext<PluginContextType>({
   pluginDefaults: PLUGIN_DEFAULTS,
   loading: true,
   error: null,
-  refreshRegistry: async () => { },
+  refreshRegistry: async () => {},
 });
 
 // Provider component
