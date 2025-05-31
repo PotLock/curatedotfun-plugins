@@ -47,6 +47,10 @@ let pluginRegistry: Record<string, PluginMetadata> = {
   "@curatedotfun/translate-transform": {
     url: "http://localhost:3012/remoteEntry.js",
     type: "transformer",
+  "@curatedotfun/masa-source": {
+    // Added masa-source plugin
+    url: "http://localhost:3011/remoteEntry.js", // Assuming port 3011, adjust if necessary
+    type: "source",
   },
 };
 
@@ -68,7 +72,8 @@ export function setPluginRegistry(
         `Invalid plugin metadata for ${name}: missing url or type`,
       );
     }
-    if (!["distributor", "transformer"].includes(metadata.type)) {
+    // Updated to include "source" as a valid type
+    if (!["distributor", "transformer", "source"].includes(metadata.type)) {
       throw new Error(`Invalid plugin type for ${name}: ${metadata.type}`);
     }
   }
