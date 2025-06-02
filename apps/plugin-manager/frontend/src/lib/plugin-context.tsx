@@ -73,6 +73,10 @@ export const PLUGIN_DEFAULTS: Record<string, Record<string, unknown>> = {
     keyPair: "{CROSSPOST_KEY}",
     targets: [{ platform: "your-platform", userId: "your-userid" }],
   },
+  "@curatedotfun/discord": {
+    botToken: "{DISCORD_BOT_TOKEN}",
+    channelId: "123456789012345678",
+  },
 };
 
 // Create the context with default values
