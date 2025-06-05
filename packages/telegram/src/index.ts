@@ -8,6 +8,16 @@ interface TelegramConfig {
   [key: string]: string | undefined;
 }
 
+class TelegramAPIError extends Error {
+  constructor(
+    message: string,
+    public readonly response: any, // The raw API error response
+  ) {
+    super(message);
+    this.name = "TelegramAPIError";
+  }
+}
+
 export default class TelegramPlugin
   implements DistributorPlugin<string, TelegramConfig>
 {
@@ -111,7 +121,10 @@ export default class TelegramPlugin
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(`Failed to send message: ${JSON.stringify(error)}`);
+      throw new TelegramAPIError(
+        `Failed to send message: ${error.description || "Unknown error"}`,
+        error,
+      );
     }
   }
 }
