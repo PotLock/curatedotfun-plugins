@@ -53,6 +53,10 @@ let pluginRegistry: Record<string, PluginMetadata> = {
     url: "http://localhost:3011/remoteEntry.js", // Assuming port 3011, adjust if necessary
     type: "source",
   },
+  "@curatedotfun/discord": {
+    url: "http://localhost:3012/remoteEntry.js",
+    type: "distributor",
+  },
 };
 
 export function getPluginByName(name: string): PluginMetadata | undefined {
