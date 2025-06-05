@@ -9,7 +9,7 @@
     "docs"
   ],
   "scripts": {
-    "dev": "turbo run dev --filter=@curatedotfun/plugin-manager --filter=@curatedotfun/discord",
+    "dev": "turbo run dev --filter=@curatedotfun/plugin-manager --filter=@curatedotfun/simple-transform --filter=@curatedotfun/object-transform --filter=@curatedotfun/ai-transform --filter=@curatedotfun/translate-transform",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "fmt": "prettier --write '**/*.{js,jsx,ts,tsx,json}'",

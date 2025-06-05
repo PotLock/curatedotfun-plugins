@@ -44,6 +44,10 @@ let pluginRegistry: Record<string, PluginMetadata> = {
     url: "http://localhost:3010/remoteEntry.js",
     type: "distributor",
   },
+  "@curatedotfun/translate-transform": {
+    url: "http://localhost:3012/remoteEntry.js",
+    type: "transformer",
+  },
   "@curatedotfun/masa-source": {
     // Added masa-source plugin
     url: "http://localhost:3011/remoteEntry.js", // Assuming port 3011, adjust if necessary

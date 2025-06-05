@@ -142,6 +142,11 @@ const sidebars: SidebarsConfig = {
               id: "plugins/transformers/ai-transform",
               label: "🤖 AI Transform",
             },
+            {
+              type: "doc",
+              id: "plugins/transformers/translate-transform",
+              label: "🌐 Translate Transform",
+            },
           ],
         },
       ],

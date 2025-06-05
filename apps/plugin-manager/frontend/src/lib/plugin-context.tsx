@@ -47,6 +47,12 @@ export const PLUGIN_DEFAULTS: Record<string, Record<string, unknown>> = {
   "@curatedotfun/simple-transform": {
     format: "🚀 {{title}} \n\n {{content}} \n\n#{{#tags}}#{{.}}{{/tags}}",
   },
+  "@curatedotfun/translate-transform": {
+    apiKey: "{DEEPL_API_KEY}",
+    targetLang: "JA",
+    sourceLang: "EN",
+    preserveFormatting: true,
+  },
   "@curatedotfun/notion": {
     token: "{NOTION_TOKEN}",
     databaseId: "your-database-id",
