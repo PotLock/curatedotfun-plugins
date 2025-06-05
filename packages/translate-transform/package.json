@@ -1,0 +1,49 @@
+{
+  "name": "@curatedotfun/translate-transform",
+  "version": "0.0.1",
+  "description": "Translation transform plugin for curatedotfun using DeepL",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/potlock/curatedotfun-plugins.git",
+    "directory": "packages/translate-transform"
+  },
+  "keywords": [
+    "curatedotfun",
+    "transformer",
+    "plugin",
+    "translation",
+    "deepl"
+  ],
+  "scripts": {
+    "build": "rspack build && tsc -p tsconfig.build.json",
+    "dev": "rspack serve",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@curatedotfun/types": "workspace:*",
+    "@curatedotfun/utils": "workspace:*",
+    "@rspack/cli": "latest",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "deepl-node": "^1.18.0"
+  }
+}
