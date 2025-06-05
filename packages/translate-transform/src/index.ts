@@ -1,10 +1,7 @@
-import type {
-  SourceLanguageCode,
-  TargetLanguageCode,
-  TranslateTextOptions,
-} from "./types";
+import type { TranslateTextOptions } from "./types";
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 import { Translator } from "deepl-node";
+import type { SourceLanguageCode, TargetLanguageCode } from "deepl-node";
 
 interface TranslationConfig extends Record<string, unknown> {
   apiKey: string;
@@ -64,8 +61,8 @@ export default class TranslationTransformer
       // Perform translation
       const result = await this.translator.translateText(
         textToTranslate,
-        this.config.sourceLang || null,
-        this.config.targetLang,
+        this.config.sourceLang as SourceLanguageCode,
+        this.config.targetLang as TargetLanguageCode,
         {
           preserveFormatting: this.config.preserveFormatting ?? true,
         } as TranslateTextOptions,

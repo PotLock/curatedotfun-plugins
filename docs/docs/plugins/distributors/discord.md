@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# 💬 Discord Plugin
+# 👾 Discord Plugin
 
 The Discord plugin enables distribution of curated content to Discord channels.
 

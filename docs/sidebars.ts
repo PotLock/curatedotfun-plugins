@@ -93,6 +93,11 @@ const sidebars: SidebarsConfig = {
             },
             {
               type: "doc",
+              id: "plugins/distributors/discord",
+              label: "👾 Discord",
+            },
+            {
+              type: "doc",
               id: "plugins/distributors/notion",
               label: "📝 Notion",
             },
