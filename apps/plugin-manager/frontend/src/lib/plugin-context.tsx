@@ -83,6 +83,10 @@ export const PLUGIN_DEFAULTS: Record<string, Record<string, unknown>> = {
     botToken: "{DISCORD_BOT_TOKEN}",
     channelId: "123456789012345678",
   },
+  "@curatedotfun/farcaster": {
+    apiKey: "{FARCASTER_API_KEY}",
+    signerUuid: "{FARCASTER_SIGNER_UUID}",
+  },
 };
 
 // Create the context with default values
