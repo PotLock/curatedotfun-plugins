@@ -3,12 +3,6 @@ import { z } from "zod";
 import { format } from "date-fns";
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 
-// Create a local copy of Mustache with custom settings
-const localMustache = { ...Mustache };
-localMustache.escape = function (text) {
-  return text;
-};
-
 // Default template generators
 type TemplateGenerator = (formatStr?: string) => string | number;
 
@@ -83,7 +77,10 @@ export default class ObjectTransformer
     ): unknown => {
       // Helper function to process template value
       const processTemplate = (template: string) => {
-        const rendered = localMustache.render(template, inputData);
+        const originalEscape = Mustache.escape;
+        Mustache.escape = (text) => text;
+        const rendered = Mustache.render(template, inputData);
+        Mustache.escape = originalEscape;
 
         // If the template references a field that's an array or object, return it directly
         const fieldMatch = template.match(/^\{\{([^}]+)\}\}$/);
