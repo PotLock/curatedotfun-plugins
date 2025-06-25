@@ -320,7 +320,7 @@ async function main() {
   });
 
   // Start server
-  const port = 3000;
+  const port = 4000;
   app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
   });
