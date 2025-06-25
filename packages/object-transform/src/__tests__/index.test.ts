@@ -367,4 +367,22 @@ describe("ObjectTransformer", () => {
       });
     });
   });
+
+  it("should not HTML-encode link fields", async () => {
+    await transformer.initialize({
+      mappings: {
+        link: "{{url}}",
+      },
+    });
+
+    const result = await transformer.transform({
+      input: {
+        url: "https://example.com/some/path?query=string",
+      },
+    });
+
+    expect(result).toEqual({
+      link: "https://example.com/some/path?query=string",
+    });
+  });
 });
