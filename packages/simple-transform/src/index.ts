@@ -1,6 +1,8 @@
 import Mustache from "mustache";
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 
+const localMustache = { ...Mustache };
+
 interface SimpleTransformerConfig extends Record<string, unknown> {
   template: string;
 }
@@ -21,7 +23,7 @@ export default class SimpleTransformer
     input,
   }: ActionArgs<unknown, SimpleTransformerConfig>): Promise<string> {
     try {
-      return Mustache.render(this.template, input);
+      return localMustache.render(this.template, input);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
