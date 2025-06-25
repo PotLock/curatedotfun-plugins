@@ -3,8 +3,9 @@ import { z } from "zod";
 import { format } from "date-fns";
 import type { TransformerPlugin, ActionArgs } from "@curatedotfun/types";
 
-// Disable HTML escaping in Mustache
-Mustache.escape = function (text) {
+// Create a local copy of Mustache with custom settings
+const localMustache = { ...Mustache };
+localMustache.escape = function (text) {
   return text;
 };
 
@@ -82,7 +83,7 @@ export default class ObjectTransformer
     ): unknown => {
       // Helper function to process template value
       const processTemplate = (template: string) => {
-        const rendered = Mustache.render(template, inputData);
+        const rendered = localMustache.render(template, inputData);
 
         // If the template references a field that's an array or object, return it directly
         const fieldMatch = template.match(/^\{\{([^}]+)\}\}$/);
