@@ -57,6 +57,10 @@ let pluginRegistry: Record<string, PluginMetadata> = {
     url: "http://localhost:3012/remoteEntry.js",
     type: "distributor",
   },
+  "@curatedotfun/farcaster": {
+    url: "http://localhost:3013/remoteEntry.js",
+    type: "distributor",
+  },
 };
 
 export function getPluginByName(name: string): PluginMetadata | undefined {
