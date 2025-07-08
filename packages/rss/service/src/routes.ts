@@ -409,7 +409,7 @@ export async function handleUpdateConfig(c: Context): Promise<Response> {
     ) {
       updatedConfig.maxItems = 100;
     }
-    
+
     if (feedAlreadyExists) {
       // Update existing feed configuration
       await updateFeedConfig(feedId, updatedConfig);
@@ -619,7 +619,7 @@ export async function handleAddItem(c: Context): Promise<Response> {
         400,
       );
     }
-    
+
     // Handle categories conversion if needed
     let category;
     if (inputItem.categories) {
