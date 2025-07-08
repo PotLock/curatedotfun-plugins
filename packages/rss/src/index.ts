@@ -1,34 +1,11 @@
 import type { ActionArgs, DistributorPlugin } from "@curatedotfun/types";
 import { RssConfig, RssConfigSchema, RssInput, RssInputSchema } from "./types";
-
-class RssServiceError extends Error {
-  constructor(
-    message: string,
-    public readonly statusCode: number,
-    public readonly response?: any,
-  ) {
-    super(message);
-    this.name = "RssServiceError";
-  }
-}
-
-class RssFeedNotFoundError extends RssServiceError {
-  constructor(feedId: string) {
-    super(`Feed with ID '${feedId}' not found.`, 404);
-  }
-}
-
-class RssConfigurationError extends RssServiceError {
-  constructor(message: string) {
-    super(`Feed configuration error: ${message}`, 400);
-  }
-}
-
-class RssStorageError extends RssServiceError {
-  constructor(message: string) {
-    super(`Storage error: ${message}`, 500);
-  }
-}
+import {
+  RssConfigurationError,
+  RssServiceError,
+  RssFeedNotFoundError,
+  RssStorageError,
+} from "./errors";
 
 export default class RssPlugin
   implements DistributorPlugin<RssInput, RssConfig>

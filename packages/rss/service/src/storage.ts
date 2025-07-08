@@ -7,6 +7,11 @@ import { FeedConfig, RssItem } from "./types.js";
 
 let redis: any;
 
+const importRedisMock = async () => {
+  const { RedisMock } = await import("./mock/redis.js");
+  return new RedisMock();
+};
+
 const initializeRedis = async () => {
   if (
     process.env.UPSTASH_REDIS_REST_URL &&
@@ -22,15 +27,13 @@ const initializeRedis = async () => {
     } catch (error) {
       console.error("Failed to import @upstash/redis:", error);
       console.log("Falling back to Redis mock");
-      const { RedisMock } = await import("./mock/redis.js");
-      return new RedisMock();
+      return await importRedisMock();
     }
   } else if (process.env.USE_REDIS_MOCK === "true") {
     // Option to use Redis mock for local
     console.log("Using in-memory Redis mock");
 
-    const { RedisMock } = await import("./mock/redis.js");
-    return new RedisMock();
+    return await importRedisMock();
   } else {
     // Use IoRedis for Docker/Railway environment
     console.log("Using IoRedis for Docker/Railway environment");
@@ -87,8 +90,7 @@ const initializeRedis = async () => {
     } catch (error) {
       console.error("Failed to import ioredis:", error);
       console.log("Falling back to Redis mock");
-      const { RedisMock } = await import("./mock/redis.js");
-      return new RedisMock();
+      return await importRedisMock();
     }
   }
 };

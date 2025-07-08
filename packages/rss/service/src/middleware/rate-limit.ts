@@ -11,6 +11,27 @@ const RATE_LIMIT = {
 // Memory cache for frequent requests to reduce Redis calls
 const memCache = new Map<string, { count: number; expires: number }>();
 
+const MAX_CACHE_SIZE = 10000; // Limit cache size
+
+// Cleanup expired entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of memCache.entries()) {
+    if (value.expires <= now) {
+      memCache.delete(key);
+    }
+  }
+
+  // If still too large, remove oldest entries
+  if (memCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(memCache.entries()).sort(
+      (a, b) => a[1].expires - b[1].expires,
+    );
+    const toRemove = entries.slice(0, entries.length - MAX_CACHE_SIZE);
+    toRemove.forEach(([key]) => memCache.delete(key));
+  }
+}, 60000); // Run every minute
+
 /**
  * Rate limiting middleware for public endpoints
  */

@@ -131,10 +131,20 @@ export async function handleCreateFeed(c: Context): Promise<Response> {
     );
   }
 
+  if (!inputConfig.id || typeof inputConfig.id !== "string") {
+    return c.json(
+      {
+        error: "Missing or invalid required field: id",
+        message: "Feed id is required and must be a string",
+      },
+      400,
+    );
+  }
+
   try {
     // Create the feed configuration with defaults
     const feedConfig: FeedConfig = {
-      id: "", // Will be set by createFeed
+      id: inputConfig.id,
       title: inputConfig.title,
       description: inputConfig.description,
       siteUrl: inputConfig.siteUrl,

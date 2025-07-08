@@ -4,21 +4,21 @@ export const RssInputSchema = z.object({
   title: z.string().optional(),
   content: z.string().optional(),
   description: z.string().optional(),
-  link: z.string().optional(),
-  publishedAt: z.string().optional(),
+  link: z.string().url().optional(),
+  publishedAt: z.string().datetime().optional(),
   guid: z.string().optional(),
   author: z
     .union([
       z.object({
         name: z.string(),
-        email: z.string().optional(),
-        link: z.string().optional(),
+        email: z.string().email().optional(),
+        link: z.string().url().optional(),
       }),
       z.array(
         z.object({
           name: z.string(),
-          email: z.string().optional(),
-          link: z.string().optional(),
+          email: z.string().email().optional(),
+          link: z.string().url().optional(),
         }),
       ),
     ])
@@ -86,16 +86,14 @@ export type RssInput = z.infer<typeof RssInputSchema>;
 export const RssFeedConfigSchema = z.object({
   title: z.string(),
   description: z.string(),
-  siteUrl: z.string(),
-  language: z.string().optional(),
-  copyright: z.string().optional(),
-  image: z.string().optional(),
-  favicon: z.string().optional(),
+  siteUrl: z.string().url(),
+  image: z.string().url().optional(),
+  favicon: z.string().url().optional(),
   author: z
     .object({
       name: z.string(),
-      email: z.string().optional(),
-      link: z.string().optional(),
+      email: z.string().email().optional(),
+      link: z.string().url().optional(),
     })
     .optional(),
   maxItems: z.number().optional(),
@@ -104,7 +102,7 @@ export const RssFeedConfigSchema = z.object({
 export type RssFeedConfig = z.infer<typeof RssFeedConfigSchema>;
 
 export const RssConfigSchema = z.object({
-  serviceUrl: z.string(),
+  serviceUrl: z.string().url(),
   apiSecret: z.string(),
   feedId: z.string(),
   feedConfig: RssFeedConfigSchema.optional(),
