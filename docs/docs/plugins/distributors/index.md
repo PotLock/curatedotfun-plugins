@@ -49,6 +49,7 @@ Distributors are configured in your `curate.config.json` under the feed's output
 - [RSS](./rss.md) - Generate RSS feeds
 - [Supabase](./supabase.md) - Store content in Supabase
 - [NEAR Social](./near-social.md) - Post content to NEAR Social
+- [Farcaster](./farcaster.md) - Post content to Farcaster
 
 ## 🔒 Type Safety
 
